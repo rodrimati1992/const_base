@@ -1,0 +1,10 @@
+[package]
+name = "const_base"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+
+[dev-dependencies]
+arrayvec = "0.7"
+base64 = "0.13.0"
