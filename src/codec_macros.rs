@@ -5,7 +5,7 @@ macro_rules! encode {
         const __CFG_NHPMWYD3NJA: $crate::Config = $config;
         {
             const OUT_LEN: $crate::__::usize =
-                $crate::encoded_len(__BYTES_NHPMWYD3NJA, __CFG_NHPMWYD3NJA);
+                $crate::encoded_len(__BYTES_NHPMWYD3NJA.len(), __CFG_NHPMWYD3NJA);
             const OUT: &[$crate::__::u8; OUT_LEN] =
                 &$crate::encode(__BYTES_NHPMWYD3NJA, __CFG_NHPMWYD3NJA);
             OUT

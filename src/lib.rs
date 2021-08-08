@@ -1,3 +1,5 @@
+// #![no_std]
+
 #[macro_use]
 mod internal_macros;
 
@@ -29,9 +31,9 @@ pub mod __ {
     };
 }
 
-pub const fn encoded_len(input: &[u8], config: Config) -> usize {
+pub const fn encoded_len(input_len: usize, config: Config) -> usize {
     match config.encoding {
-        Encoding::Base64(cset) => crate::base_64::encoded_len(input, config),
+        Encoding::Base64(cset) => crate::base_64::encoded_len(input_len, config),
     }
 }
 
