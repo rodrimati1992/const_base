@@ -1,10 +1,13 @@
-// #![no_std]
+#![no_std]
+
+#[macro_use]
+mod codec_macros;
 
 #[macro_use]
 mod internal_macros;
 
 #[macro_use]
-mod codec_macros;
+mod msg_macros;
 
 mod encoding;
 
@@ -13,6 +16,9 @@ mod config;
 mod base_64;
 
 pub mod errors;
+
+#[doc(hidden)]
+pub mod msg;
 
 #[doc(hidden)]
 pub mod __priv_utils;
@@ -31,6 +37,7 @@ pub mod __ {
     pub use core::{
         ops::Range,
         primitive::{str, u8, usize},
+        result::Result::{self, Err, Ok},
     };
 }
 

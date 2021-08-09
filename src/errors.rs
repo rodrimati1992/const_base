@@ -1,10 +1,39 @@
-use crate::Encoding;
+use crate::{msg::IS_OK, Encoding};
 
-#[derive(Debug)]
-pub enum DecodeError {
-    InvalidByte(InvalidByte),
-    MismatchedOutputLength(MismatchedOutputLength),
-    InvalidInputLength(InvalidInputLength),
+macro_rules! declare_errors {
+    ($($variant:ident $(= $value:expr)? ,)*) => (
+        #[derive(Debug)]
+        pub enum DecodeError {
+            $( $variant($variant), )*
+        }
+
+
+        #[doc(hidden)]
+        pub enum __DecodeErrorKind {
+            $( $variant $(= $value)? , )*
+        }
+
+        impl DecodeError {
+            pub(crate) const fn kind(&self) -> __DecodeErrorKind {
+                match self {
+                    $( Self::$variant{..} => __DecodeErrorKind::$variant, )*
+                }
+            }
+        }
+
+        #[doc(hidden)]
+        pub mod __ {
+            use core::marker::PhantomData;
+
+            $( pub struct $variant<T>(pub(crate) PhantomData<T>); )*
+        }
+    )
+}
+
+declare_errors! {
+    InvalidByte = IS_OK + 1,
+    MismatchedOutputLength,
+    InvalidInputLength,
 }
 
 #[derive(Debug)]
