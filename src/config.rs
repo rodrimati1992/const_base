@@ -11,7 +11,10 @@ impl Config {
     }
 
     #[inline(always)]
-    pub const fn encode<const OUT: usize>(self, input: &[u8]) -> [u8; OUT] {
+    pub const fn encode<const OUT: usize>(
+        self,
+        input: &[u8],
+    ) -> Result<[u8; OUT], crate::errors::MismatchedOutputLength> {
         crate::encode(input, self)
     }
 }

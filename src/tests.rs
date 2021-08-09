@@ -30,7 +30,7 @@ fn test_encode_base64() {
                     let written = base64::encode_config_slice(&input, b64_cfg, &mut out_no_pad);
                     assert_eq!(OUT_LEN_NO_PAD, written);
 
-                    let left = &encode::<OUT_LEN_NO_PAD>(&input, cfg);
+                    let left = &encode::<OUT_LEN_NO_PAD>(&input, cfg).unwrap();
                     let right = &out_no_pad[..written];
 
                     assert_eq!(

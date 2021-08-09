@@ -16,7 +16,7 @@ pub(crate) const fn encode<const OUT: usize>(
     mut input: &[u8],
     config: Config,
     char_set: B64CharSet,
-) -> [u8; OUT] {
+) -> Result<[u8; OUT], MismatchedOutputLength> {
     let mut out = [0u8; OUT];
     let mut out_i = 0usize;
 
@@ -24,11 +24,12 @@ pub(crate) const fn encode<const OUT: usize>(
 
     let output_len = encoded_len(input.len(), config);
 
-    if output_len > OUT {
-        [(); OUT][output_len]
-    } else if output_len < OUT {
-        [/* output_len is too small */][output_len]
-    };
+    if output_len != OUT {
+        return Err(MismatchedOutputLength {
+            expected: OUT,
+            found: output_len,
+        });
+    }
 
     macro_rules! write_out {
         ($b:expr) => {
@@ -59,7 +60,7 @@ pub(crate) const fn encode<const OUT: usize>(
         }
     }
 
-    out
+    Ok(out)
 }
 
 pub(crate) const fn decoded_len(input_len: usize, _config: Config) -> usize {
@@ -115,11 +116,11 @@ pub(crate) const fn decode<const OUT: usize>(
             if $( $new == INVALID_B64 )||* {
                 let news = [$($new),*];
                 let invalid_pos = find_first_non_b64(&news);
-                let position = in_i + invalid_pos;
+                let index = in_i + invalid_pos;
                 let byte = input[invalid_pos];
 
                 return Err(DecodeError::InvalidByte(InvalidByte{
-                    position,
+                    index,
                     byte,
                     as_char: byte as char,
                     encoding: Encoding::Base64(char_set),

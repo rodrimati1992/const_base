@@ -38,15 +38,15 @@ declare_errors! {
 
 #[derive(Debug)]
 pub struct InvalidByte {
-    pub(crate) position: usize,
+    pub(crate) index: usize,
     pub(crate) byte: u8,
     pub(crate) as_char: char,
     pub(crate) encoding: Encoding,
 }
 
 impl InvalidByte {
-    pub const fn position(&self) -> usize {
-        self.position
+    pub const fn index(&self) -> usize {
+        self.index
     }
     pub const fn byte(&self) -> u8 {
         self.byte

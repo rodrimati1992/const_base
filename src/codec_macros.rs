@@ -1,26 +1,20 @@
 #[macro_export]
 macro_rules! decode {
     ($input:expr, $config:expr $(,)*) => {{
-        const __BYTES_NHPMWYD3NJA: &[$crate::__::u8] = $input;
+        const __BYTES_NHPMWYD3NJA: &[$crate::__::u8] =
+            $crate::__convert::AsBytes($input).as_bytes();
         const __CFG_NHPMWYD3NJA: $crate::Config = $config;
         {
             const OUT_LEN: $crate::__::usize =
                 $crate::decoded_len(__BYTES_NHPMWYD3NJA.len(), __CFG_NHPMWYD3NJA);
 
-            const OUT: &(
-                [$crate::__::u8; OUT_LEN],
-                $crate::__::Result<(), $crate::DecodeError>,
-            ) = &{
-                match $crate::decode(__BYTES_NHPMWYD3NJA, __CFG_NHPMWYD3NJA) {
-                    $crate::__::Ok(x) => (x, $crate::__::Ok(())),
-                    $crate::__::Err(e) => ([0; OUT_LEN], $crate::__::Err(e)),
-                }
-            };
+            const OUT: &$crate::__AdjacentResult<[$crate::__::u8; OUT_LEN], $crate::DecodeError> =
+                &$crate::__priv_decode(__BYTES_NHPMWYD3NJA, __CFG_NHPMWYD3NJA);
 
             const _: $crate::msg::IsOk =
-                $crate::__result_tuple_to_singleton!($crate::msg::__decode_res_to_tuple(&OUT.1));
+                $crate::__result_tuple_to_singleton!($crate::msg::__decode_res_to_tuple(&OUT.err));
 
-            &OUT.0
+            &OUT.ok
         }
     }};
 }
@@ -33,8 +27,15 @@ macro_rules! encode {
         {
             const OUT_LEN: $crate::__::usize =
                 $crate::encoded_len(__BYTES_NHPMWYD3NJA.len(), __CFG_NHPMWYD3NJA);
-            const OUT: &[$crate::__::u8; OUT_LEN] =
-                &$crate::encode(__BYTES_NHPMWYD3NJA, __CFG_NHPMWYD3NJA);
+
+            const OUT: &$crate::__AdjacentResult<
+                [$crate::__::u8; OUT_LEN],
+                $crate::errors::MismatchedOutputLength,
+            > = &$crate::__priv_encode(__BYTES_NHPMWYD3NJA, __CFG_NHPMWYD3NJA);
+
+            const _: $crate::msg::IsOk =
+                $crate::__result_tuple_to_singleton!($crate::msg::__encode_res_to_tuple(&OUT.err));
+
             OUT
         }
     }};
