@@ -1,5 +1,3 @@
-use crate::Config;
-
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone)]
 pub enum Encoding {
@@ -64,9 +62,11 @@ declare_assoc_consts! {
     })
 }
 
+pub(crate) const INVALID_B64: u8 = u8::MAX;
+
 impl B64CharSetLookup {
     const fn new(into_b64: [u8; 64]) -> Self {
-        let mut from_b64 = [u8::MAX; 256];
+        let mut from_b64 = [INVALID_B64; 256];
 
         for_range! {i in 0usize..64 =>
              from_b64[into_b64[i] as usize] = i as u8;

@@ -1,4 +1,8 @@
-use crate::{B64CharSet, Config};
+use crate::{
+    encoding::INVALID_B64,
+    errors::{DecodeError, InvalidByte, InvalidInputLength, MismatchedOutputLength},
+    B64CharSet, Config, Encoding,
+};
 
 const MASK_6BITS: u8 = 0b111111;
 
@@ -56,4 +60,99 @@ pub(crate) const fn encode<const OUT: usize>(
     }
 
     out
+}
+
+pub(crate) const fn decoded_len(input_len: usize, _config: Config) -> usize {
+    let mult = input_len as u64 * 6;
+
+    (mult / 8) as usize
+}
+
+pub(crate) const fn decode<const OUT: usize>(
+    mut input: &[u8],
+    config: Config,
+    char_set: B64CharSet,
+) -> Result<[u8; OUT], DecodeError> {
+    let mut out = [0u8; OUT];
+    let mut out_i = 0usize;
+    let mut in_i = 0;
+
+    let from_b64 = &char_set.lookup().from_b64;
+
+    let output_len = decoded_len(input.len(), config);
+
+    if input.len() % 4 == 1 {
+        return Err(DecodeError::InvalidInputLength(InvalidInputLength {
+            length: input.len(),
+        }));
+    } else if output_len != OUT {
+        return Err(DecodeError::MismatchedOutputLength(
+            MismatchedOutputLength {
+                expected: OUT,
+                found: output_len,
+            },
+        ));
+    }
+
+    macro_rules! write_out {
+        ($b:expr) => {
+            write_into! {out, out_i, $b}
+        };
+    }
+
+    const fn find_first_non_b64<const N: usize>(arr: &[u8; N]) -> usize {
+        for_range! {i in 0..N =>
+            if arr[i] == INVALID_B64 {
+                return i;
+            }
+        }
+        !0
+    }
+
+    macro_rules! from_b64 {
+        ($($new:ident = $old:ident),*) => (
+            $( let $new = from_b64[$old as usize]; )*
+            if $( $new == INVALID_B64 )||* {
+                let news = [$($new),*];
+                let invalid_pos = find_first_non_b64(&news);
+                let position = in_i + invalid_pos;
+                let byte = input[invalid_pos];
+
+                return Err(DecodeError::InvalidByte(InvalidByte{
+                    position,
+                    byte,
+                    as_char: byte as char,
+                    encoding: Encoding::Base64(char_set),
+                }))
+            }
+        )
+    }
+
+    if !input.is_empty() {
+        while let [oa, ob, oc, od, ref rem @ ..] = *input {
+            from_b64! {a = oa, b = ob, c = oc, d = od}
+
+            write_out!(a << 2 | (b >> 4));
+            write_out!((b << 4) | (c >> 2));
+            write_out!((c << 6) | d);
+            input = rem;
+            in_i += 4;
+        }
+
+        match *input {
+            [oa, ob, oc] => {
+                from_b64! {a = oa, b = ob, c = oc}
+                write_out!(a << 2 | (b >> 4));
+                write_out!((b << 4) | (c >> 2));
+            }
+            [oa, ob] => {
+                from_b64! {a = oa, b = ob}
+                write_out!(a << 2 | (b >> 4));
+            }
+            [_] => [/* unreachable */][input.len()],
+            _ => {}
+        }
+    }
+
+    Ok(out)
 }
