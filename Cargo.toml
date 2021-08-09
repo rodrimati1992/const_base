@@ -13,3 +13,12 @@ default_features = false
 version = "0.8"
 default_features = false
 features = ["small_rng"]
+
+[dev-dependencies.itertools]
+version = "0.10"
+default_features = false
+
+
+
+
+

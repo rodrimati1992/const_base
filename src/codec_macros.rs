@@ -6,7 +6,7 @@ macro_rules! decode {
         const __CFG_NHPMWYD3NJA: $crate::Config = $config;
         {
             const OUT_LEN: $crate::__::usize =
-                $crate::decoded_len(__BYTES_NHPMWYD3NJA.len(), __CFG_NHPMWYD3NJA);
+                $crate::decoded_len(__BYTES_NHPMWYD3NJA, __CFG_NHPMWYD3NJA);
 
             const OUT: &$crate::__AdjacentResult<[$crate::__::u8; OUT_LEN], $crate::DecodeError> =
                 &$crate::__priv_decode(__BYTES_NHPMWYD3NJA, __CFG_NHPMWYD3NJA);

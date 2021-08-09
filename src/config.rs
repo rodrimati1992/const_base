@@ -3,11 +3,24 @@ use crate::{B64CharSet, Encoding};
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
     pub(crate) encoding: Encoding,
+    pub(crate) end_padding: bool,
 }
 
 impl Config {
     pub const fn new(encoding: Encoding) -> Self {
-        Self { encoding }
+        Self {
+            encoding,
+            end_padding: true,
+        }
+    }
+
+    /// Determines whether the string has padding at the end.
+    /// This is `true` by default.
+    ///
+    /// For base64 strings, the string is padded to be a multiple of 3 long, with `=`.
+    pub const fn end_padding(mut self, have: bool) -> Self {
+        self.end_padding = have;
+        self
     }
 
     #[inline(always)]

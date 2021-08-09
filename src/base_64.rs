@@ -6,10 +6,19 @@ use crate::{
 
 const MASK_6BITS: u8 = 0b111111;
 
-pub(crate) const fn encoded_len(input_len: usize, _config: Config) -> usize {
+// Every 3 bytes from the input is converted to 4 base64 encoded bytes
+const B64_CHUNK: usize = 4;
+
+pub(crate) const fn encoded_len(input_len: usize, config: Config) -> usize {
     let mult = input_len as u64 * 8;
 
-    crate::__priv_utils::div_ceil_u64(mult, 6) as usize
+    let div = crate::__priv_utils::div_ceil_u64(mult, 6) as usize;
+
+    if config.end_padding {
+        crate::__priv_utils::round_up_to_multiple_usize(div, B64_CHUNK)
+    } else {
+        div
+    }
 }
 
 pub(crate) const fn encode<const OUT: usize>(
@@ -60,13 +69,25 @@ pub(crate) const fn encode<const OUT: usize>(
         }
     }
 
+    while out_i != OUT {
+        write_into! {out, out_i, b'='}
+    }
+
     Ok(out)
 }
 
-pub(crate) const fn decoded_len(input_len: usize, _config: Config) -> usize {
-    let mult = input_len as u64 * 6;
+pub(crate) const fn decoded_len(mut input: &[u8], config: Config) -> usize {
+    if config.end_padding {
+        while let [rem @ .., b'='] = input {
+            input = rem;
+        }
+    }
 
-    (mult / 8) as usize
+    let mult = input.len() as u64 * 6;
+
+    let div = (mult / 8) as usize;
+
+    div
 }
 
 pub(crate) const fn decode<const OUT: usize>(
@@ -80,7 +101,13 @@ pub(crate) const fn decode<const OUT: usize>(
 
     let from_b64 = &char_set.lookup().from_b64;
 
-    let output_len = decoded_len(input.len(), config);
+    let output_len = decoded_len(input, config);
+
+    if config.end_padding {
+        while let [rem @ .., b'='] = input {
+            input = rem;
+        }
+    }
 
     if input.len() % 4 == 1 {
         return Err(DecodeError::InvalidInputLength(InvalidInputLength {
