@@ -52,7 +52,7 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 pub const fn encode<const OUT: usize>(
     input: &[u8],
     config: Config,
-) -> Result<[u8; OUT], crate::errors::MismatchedOutputLength> {
+) -> Result<[u8; OUT], crate::MismatchedOutputLength> {
     match config.encoding {
         Encoding::Base64(cset) => crate::base_64::encode(input, config, cset),
     }
@@ -149,7 +149,7 @@ pub struct __AdjacentResult<T, E> {
 pub const fn __priv_encode<const OUT: usize>(
     input: &[u8],
     config: Config,
-) -> __AdjacentResult<[u8; OUT], crate::errors::MismatchedOutputLength> {
+) -> __AdjacentResult<[u8; OUT], crate::MismatchedOutputLength> {
     match encode(input, config) {
         Ok(ok) => __AdjacentResult { ok, err: Ok(()) },
         Err(e) => __AdjacentResult {

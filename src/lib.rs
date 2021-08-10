@@ -61,6 +61,7 @@
 //!
 //!
 #![no_std]
+#![deny(clippy::missing_const_for_fn)]
 
 #[macro_use]
 mod codec_macros;
@@ -98,7 +99,7 @@ pub use crate::{
     config::Config,
     encode_decode_shared::*,
     encoding::{B64CharSet, Encoding},
-    errors::DecodeError,
+    errors::{DecodeError, InvalidByte, InvalidInputLength, MismatchedOutputLength},
 };
 
 #[cfg(test)]

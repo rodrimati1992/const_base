@@ -1,10 +1,10 @@
 use crate::{
-    errors::{DecodeError as DE, InvalidByte, InvalidInputLength, MismatchedOutputLength},
     msg::{
         self, IsOk, __decode_res_to_tuple, __encode_res_to_tuple, byte, byte_as_char, expected,
         found, index, length,
     },
-    B64CharSet, Encoding,
+    B64CharSet, DecodeError as DE, Encoding, InvalidByte, InvalidInputLength,
+    MismatchedOutputLength,
 };
 
 macro_rules! from_decode_res {

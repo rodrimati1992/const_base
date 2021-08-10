@@ -62,10 +62,7 @@ declare_errors! {
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{
-///     Config, decode,
-///     errors::{DecodeError, InvalidByte},
-/// };
+/// use const_base::{Config, DecodeError, InvalidByte, decode};
 ///
 /// const DECODED: Result<[u8; 4], DecodeError> = decode(b"bGl!ZQ", Config::B64);
 ///
@@ -104,10 +101,7 @@ impl InvalidByte {
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{
-///     Config, decode,
-///     errors::{DecodeError, MismatchedOutputLength},
-/// };
+/// use const_base::{Config, DecodeError, MismatchedOutputLength, decode};
 ///
 /// const DECODED: Result<[u8; 8], DecodeError> = decode(b"AAAAAA", Config::B64);
 /// assert!(matches!(
@@ -142,10 +136,7 @@ impl MismatchedOutputLength {
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{
-///     Config, decode,
-///     errors::{DecodeError, InvalidInputLength},
-/// };
+/// use const_base::{Config, DecodeError, InvalidInputLength, decode};
 ///
 /// const DECODED: Result<[u8; 8], DecodeError> = decode(b"AAAAA", Config::B64);
 /// assert!(matches!(

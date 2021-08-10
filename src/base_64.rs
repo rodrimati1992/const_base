@@ -1,7 +1,6 @@
 use crate::{
-    encoding::INVALID_B64,
-    errors::{DecodeError, InvalidByte, InvalidInputLength, MismatchedOutputLength},
-    B64CharSet, Config, Encoding,
+    encoding::INVALID_B64, B64CharSet, Config, DecodeError, Encoding, InvalidByte,
+    InvalidInputLength, MismatchedOutputLength,
 };
 
 const MASK_6BITS: u8 = 0b111111;
