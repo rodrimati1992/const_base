@@ -1,13 +1,26 @@
+/// Determines which encoding is used.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Encoding {
+    /// The Base64 encoding.
     Base64(B64CharSet),
 }
 
+/// Determines which characters are used for the Base64 encoding
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum B64CharSet {
+    /// Uses these characters:
+    ///
+    /// ```text
+    /// ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
+    /// ```
     Standard,
+    /// Uses these characters:
+    ///
+    /// ```text
+    /// ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_
+    /// ```
     UrlSafe,
 }
 

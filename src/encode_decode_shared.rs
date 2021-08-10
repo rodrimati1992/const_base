@@ -35,12 +35,19 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{Config, encode, unwrap_or_repeated};
+/// use const_base::{Config, encode, unwrap_or, utils::repeated};
 ///
-/// const ENCODED: [u8; 4] = unwrap_or_repeated!(encode(b"BYE", Config::B64), 0xFF);
+/// {
+///     const ENCODED: [u8; 16] = unwrap_or!(encode(b"hello worl", Config::B64), repeated(0xFF));
 ///
-/// assert_eq!(ENCODED, *b"QllF");
+///     assert_eq!(ENCODED, *b"aGVsbG8gd29ybA==");
+/// }
+/// {
+///     const CFG: Config = Config::B64.end_padding(false);
+///     const ENCODED: [u8; 4] = unwrap_or!(encode(b"BYE", CFG), repeated(0xFF));
 ///
+///     assert_eq!(ENCODED, *b"QllF");
+/// }
 /// ```
 pub const fn encode<const OUT: usize>(
     input: &[u8],
@@ -80,14 +87,14 @@ pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
 ///
 /// This function returns these errors:
 ///
-/// - `DecodeError::InvalidByte`:
+/// - [`DecodeError::InvalidByte`]:
 /// When one of the bytes isn't in the char set for that encoding.
 /// Eg: a `!` in an otherwise base 64 encoded string.
 ///
-/// - `DecodeError::MismatchedOutputLength`:
+/// - [`DecodeError::MismatchedOutputLength`]:
 /// When `OUT` doesn't equal `decoded_len(input, config)`.
 ///
-/// - `DecodeError::InvalidInputLength`:
+/// - [`DecodeError::InvalidInputLength`]:
 /// When `input.len()` is not a valid length for that encoding.
 /// For base 64 that is when `input.len() % 4` equals `1`.
 ///
@@ -96,10 +103,13 @@ pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{Config, DecodeError, decode, unwrap_or_repeated};
+/// use const_base::{
+///     Config, DecodeError, decode, unwrap_or,
+///     utils::repeated,
+/// };
 ///
 /// {
-///     const OUT: [u8; 5] = unwrap_or_repeated!(decode(b"cm9ja28=", Config::B64), 0xFF);
+///     const OUT: [u8; 5] = unwrap_or!(decode(b"cm9ja28=", Config::B64), repeated(0xFF));
 ///
 ///     assert_eq!(OUT, *b"rocko");
 /// }

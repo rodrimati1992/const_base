@@ -56,8 +56,8 @@
 /// ```
 /// This macro emulates panics using type errors like those.
 ///
-/// In this case the error is `InvalidInputLength`,
-/// because the input string can't be `4 * n + 1` bytes long (`n` can be any integer).
+/// In this case, the error is `InvalidInputLength`,
+/// because the input string can't be `4 * n + 1` bytes long (`n` can be any positive integer).
 ///
 ///
 #[macro_export]

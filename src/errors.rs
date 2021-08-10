@@ -1,10 +1,16 @@
+//! All the errors from this crate.
+
 use crate::{msg::IS_OK, Encoding};
 
 macro_rules! declare_errors {
-    ($($variant:ident $(= $value:expr)? ,)*) => (
+    ($($(#[$attr:meta])* $variant:ident $(= $value:expr)? ,)*) => (
+        /// Error returned by [`decode`](crate::decode())
         #[derive(Debug, PartialEq)]
         pub enum DecodeError {
-            $( $variant($variant), )*
+            $(
+                $(#[$attr])*
+                $variant($variant),
+            )*
         }
 
 
@@ -31,11 +37,41 @@ macro_rules! declare_errors {
 }
 
 declare_errors! {
+    /// When one of the bytes isn't in the char set for that encoding.
+    ///
+    /// Eg: a `!` in an otherwise base 64 encoded string.
     InvalidByte = IS_OK + 1,
+
+    /// When the array returned by [`decode`] isn't the same length as what the arguments
+    /// passed to [`decode`] would produce.
+    ///
+    /// [`decode`]: crate::decode()
     MismatchedOutputLength,
+    /// When the slice passed to [`decode`] is not a valid length for that encoding.
+    ///
+    /// For base 64 that is when `input.len() % 4` equals `1`.
     InvalidInputLength,
 }
 
+/// When one of the bytes isn't in the char set for that encoding.
+///
+/// Eg: a `!` in an otherwise base 64 encoded string.
+///
+/// # Example
+///
+/// ### Base 64
+///
+/// ```rust
+/// use const_base::{
+///     Config, decode,
+///     errors::{DecodeError, InvalidByte},
+/// };
+///
+/// const DECODED: Result<[u8; 4], DecodeError> = decode(b"bGl!ZQ", Config::B64);
+///
+/// assert!(matches!(DECODED, Err(DecodeError::InvalidByte(InvalidByte{..}))));
+///
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct InvalidByte {
     pub(crate) index: usize,
@@ -59,6 +95,29 @@ impl InvalidByte {
     }
 }
 
+/// When the array returned by [`decode`] isn't the same length as what the arguments
+/// passed to [`decode`] would produce.
+///
+///
+/// # Example
+///
+/// ### Base 64
+///
+/// ```rust
+/// use const_base::{
+///     Config, decode,
+///     errors::{DecodeError, MismatchedOutputLength},
+/// };
+///
+/// const DECODED: Result<[u8; 8], DecodeError> = decode(b"AAAAAA", Config::B64);
+/// assert!(matches!(
+///     DECODED,
+///     Err(DecodeError::MismatchedOutputLength(MismatchedOutputLength{..}))
+/// ));
+///
+/// ```
+///
+/// [`decode`]: crate::decode()
 #[derive(Debug, PartialEq)]
 pub struct MismatchedOutputLength {
     pub(crate) expected: usize,
@@ -74,6 +133,29 @@ impl MismatchedOutputLength {
     }
 }
 
+/// When the slice passed to [`decode`] is not a valid length for that encoding.
+///
+/// For base 64 that is when `input.len() % 4` equals `1`.
+///
+/// # Example
+///
+/// ### Base 64
+///
+/// ```rust
+/// use const_base::{
+///     Config, decode,
+///     errors::{DecodeError, InvalidInputLength},
+/// };
+///
+/// const DECODED: Result<[u8; 8], DecodeError> = decode(b"AAAAA", Config::B64);
+/// assert!(matches!(
+///     DECODED,
+///     Err(DecodeError::InvalidInputLength(InvalidInputLength{..}))
+/// ));
+///
+/// ```
+///
+/// [`decode`]: crate::decode()
 #[derive(Debug, PartialEq)]
 pub struct InvalidInputLength {
     pub(crate) length: usize,
