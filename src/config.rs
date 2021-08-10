@@ -17,7 +17,7 @@ impl Config {
     /// Determines whether the string has padding at the end.
     /// This is `true` by default.
     ///
-    /// For base64 strings, the string is padded to be a multiple of 3 long, with `=`.
+    /// For base64 strings, the string is padded to be a multiple of 4 long, with `=`.
     pub const fn end_padding(mut self, have: bool) -> Self {
         self.end_padding = have;
         self

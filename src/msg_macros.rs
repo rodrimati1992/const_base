@@ -1,3 +1,4 @@
+#[doc(hidden)]
 #[macro_export]
 macro_rules! __result_tuple_to_singleton {
     ($res:expr) => {{

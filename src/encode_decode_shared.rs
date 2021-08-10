@@ -37,6 +37,20 @@ pub struct __AdjacentResult<T, E> {
 }
 
 #[doc(hidden)]
+pub const fn __priv_encode<const OUT: usize>(
+    input: &[u8],
+    config: Config,
+) -> __AdjacentResult<[u8; OUT], crate::errors::MismatchedOutputLength> {
+    match encode(input, config) {
+        Ok(ok) => __AdjacentResult { ok, err: Ok(()) },
+        Err(e) => __AdjacentResult {
+            ok: [0; OUT],
+            err: Err(e),
+        },
+    }
+}
+
+#[doc(hidden)]
 pub const fn __priv_decode<const OUT: usize>(
     input: &[u8],
     config: Config,
