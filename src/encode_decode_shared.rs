@@ -172,3 +172,161 @@ pub const fn __priv_decode<const OUT: usize>(
         },
     }
 }
+
+pub(crate) const fn encoded_len_bases(
+    input_len: usize,
+    config: Config,
+    div: u64,
+    chunk_size: usize,
+) -> usize {
+    let mult = input_len as u64 * 8;
+
+    let div = crate::__priv_utils::div_ceil_u64(mult, div) as usize;
+
+    if config.end_padding {
+        crate::__priv_utils::round_up_to_multiple_usize(div, chunk_size)
+    } else {
+        div
+    }
+}
+
+pub(crate) const fn decoded_len_bases(mut input: &[u8], config: Config, mult: u64) -> usize {
+    if config.end_padding {
+        while let [rem @ .., b'='] = input {
+            input = rem;
+        }
+    }
+
+    let mult = input.len() as u64 * mult;
+
+    (mult / 8) as usize
+}
+
+macro_rules! encode_bases {
+    ($input:ident, $config:ident, $char_set:ident, $encode_non_empty:expr) => {
+        let mut out = [0u8; OUT];
+        let mut out_i = 0usize;
+
+        let lookup = $char_set.lookup();
+
+        let output_len = encoded_len($input.len(), $config);
+
+        if output_len != OUT {
+            return Err(crate::MismatchedOutputLength {
+                expected: OUT,
+                found: output_len,
+            });
+        }
+
+        macro_rules! write_out {
+            ($b:expr) => {
+                write_into! {out, out_i, lookup.into_enc[$b as usize]}
+            };
+        }
+
+        if !$input.is_empty() {
+            $encode_non_empty
+        }
+
+        while out_i != OUT {
+            write_into! {out, out_i, b'='}
+        }
+
+        Ok(out)
+    };
+}
+pub(crate) use encode_bases;
+
+macro_rules! decode_bases {
+    (
+        dollar = $_:tt,
+        $input:ident,
+        $config:ident,
+        $char_set:ident,
+        |$in_i:ident| $decode_non_empty:expr
+    ) => {
+        use crate::encode_decode_shared::make_invalid_byte_err;
+        use crate::{DecodeError, InvalidInputLength, MismatchedOutputLength};
+
+        let mut out = [0u8; OUT];
+        let mut out_i = 0usize;
+        let mut $in_i = 0;
+
+        let from_enc = &$char_set.lookup().from_enc;
+
+        let output_len = decoded_len($input, $config);
+
+        if $config.end_padding {
+            while let [rem @ .., b'='] = $input {
+                $input = rem;
+            }
+        }
+
+        if $input.len() % 4 == 1 {
+            return Err(DecodeError::InvalidInputLength(InvalidInputLength {
+                length: $input.len(),
+            }));
+        } else if output_len != OUT {
+            return Err(DecodeError::MismatchedOutputLength(
+                MismatchedOutputLength {
+                    expected: OUT,
+                    found: output_len,
+                },
+            ));
+        }
+
+        macro_rules! write_out {
+            ($b:expr) => {
+                write_into! {out, out_i, $b}
+            };
+        }
+
+#[rustfmt::skip]
+        macro_rules! from_encoded {
+            ($_($new:ident = $old:ident),*) => (
+                $_( let $new = from_enc[$old as usize]; )*
+                if $_( $new == crate::encoding::INVALID_ENC )||* {
+                    return Err(make_invalid_byte_err(
+                        &[$_($new),*],
+                        $input,
+                        $in_i,
+                        Encoding::Base64($char_set)
+                    ));
+                }
+            )
+        }
+
+        if !$input.is_empty() {
+            $decode_non_empty
+        }
+
+        Ok(out)
+    };
+}
+pub(crate) use decode_bases;
+
+pub(crate) const fn make_invalid_byte_err(
+    arr: &[u8],
+    input: &[u8],
+    in_i: usize,
+    encoding: crate::Encoding,
+) -> DecodeError {
+    let mut invalid_pos = !0;
+
+    for_range! {i in 0..arr.len() =>
+        if arr[i] == crate::encoding::INVALID_ENC {
+            invalid_pos = i;
+            break;
+        }
+    }
+
+    let index = in_i + invalid_pos;
+    let byte = input[invalid_pos];
+
+    DecodeError::InvalidByte(crate::InvalidByte {
+        index,
+        byte,
+        as_char: byte as char,
+        encoding,
+    })
+}

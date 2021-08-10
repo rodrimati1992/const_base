@@ -76,6 +76,8 @@ mod encoding;
 
 mod config;
 
+// mod base_32;
+
 mod base_64;
 
 mod encode_decode_shared;
@@ -98,7 +100,7 @@ pub mod __priv_utils;
 pub use crate::{
     config::Config,
     encode_decode_shared::*,
-    encoding::{B64CharSet, Encoding},
+    encoding::{B32CharSet, B64CharSet, Encoding},
     errors::{DecodeError, InvalidByte, InvalidInputLength, MismatchedOutputLength},
 };
 
