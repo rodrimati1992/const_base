@@ -4,6 +4,8 @@ use crate::{B64CharSet, Config, DecodeError, Encoding};
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
+mod type_level_errors;
+
 #[test]
 fn test_encode_base64() {
     let mut rng = SmallRng::seed_from_u64(6249204433781597762);
