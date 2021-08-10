@@ -5,18 +5,20 @@
 //! ### Encoding
 //!
 //! ```rust
-//! use const_base::{encode_as_str, Config};
+//! use const_base::{encode, encode_as_str, Config};
 //!
 //! {
-//!     // this macro can encode both `&str` and `&[u8]` constants.
-//!     const OUT: &str = encode_as_str!("foo", Config::B64);
+//!     // the encoding macros can take both `&str` and `&[u8]` constants.
+//!     const OUTA: &[u8; 4] = encode!("foo", Config::B64);
+//!     const OUTB: &[u8; 4] = encode!(b"foo", Config::B64);
 //!     
-//!     assert_eq!(OUT, "Zm9v");
+//!     assert_eq!(OUTA, b"Zm9v");
+//!     assert_eq!(OUTB, b"Zm9v");
 //! }
 //! {
 //!     const BYTES: &[u8] = b"hello";
 //!
-//!     // this macro can encode non-literal constants
+//!     // the encoding macros can encode non-literal constants
 //!     const OUT: &str = encode_as_str!(BYTES, Config::B64_URL_SAFE);
 //!     
 //!     assert_eq!(OUT, "aGVsbG8=");
@@ -71,6 +73,10 @@ mod config;
 mod base_64;
 
 mod encode_decode_shared;
+
+mod macros;
+
+pub mod utils;
 
 #[doc(hidden)]
 pub mod __macro_args;

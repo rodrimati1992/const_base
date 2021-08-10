@@ -2,7 +2,7 @@ use crate::{msg::IS_OK, Encoding};
 
 macro_rules! declare_errors {
     ($($variant:ident $(= $value:expr)? ,)*) => (
-        #[derive(Debug)]
+        #[derive(Debug, PartialEq)]
         pub enum DecodeError {
             $( $variant($variant), )*
         }
@@ -36,7 +36,7 @@ declare_errors! {
     InvalidInputLength,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct InvalidByte {
     pub(crate) index: usize,
     pub(crate) byte: u8,
@@ -59,7 +59,7 @@ impl InvalidByte {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct MismatchedOutputLength {
     pub(crate) expected: usize,
     pub(crate) found: usize,
@@ -74,7 +74,7 @@ impl MismatchedOutputLength {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct InvalidInputLength {
     pub(crate) length: usize,
 }
