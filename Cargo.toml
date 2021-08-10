@@ -1,20 +1,20 @@
 [package]
 name = "const_base"
 version = "0.1.0"
-edition = "2018"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
+edition = "2018"
 license = "Zlib"
 description = "Compile-time encoding/decoding in a selection of bases (includes base 64)"
 documentation = "https://docs.rs/const_base/"
-readme="../README.md"
+readme="./README.md"
 keywords = ["no-std", "encoding", "base64", "const-fn"]
 categories = ["no-std", "encoding"]
 repository = "https://github.com/rodrimati1992/const_base/"
 include = [
     "Cargo.toml", 
-    "src/*/*.rs", 
-    "../README.md",
-    "../LICENSE-ZLIB.md", 
+    "src/**/*.rs", 
+    "README.md",
+    "LICENSE-ZLIB.md", 
 ]
 
 [dependencies]
