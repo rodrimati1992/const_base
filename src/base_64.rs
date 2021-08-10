@@ -85,9 +85,7 @@ pub(crate) const fn decoded_len(mut input: &[u8], config: Config) -> usize {
 
     let mult = input.len() as u64 * 6;
 
-    let div = (mult / 8) as usize;
-
-    div
+    (mult / 8) as usize
 }
 
 pub(crate) const fn decode<const OUT: usize>(

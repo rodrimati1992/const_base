@@ -45,6 +45,13 @@
 //! }
 //! ```
 //!
+//! # No-std support
+//!
+//! `const_base` is `#![no_std]`, it can be used anywhere Rust can be used.
+//!
+//! # Minimum Supported Rust Version
+//!
+//! `const_base` requires Rust 1.51.0, because it uses const generics.
 //!
 //!
 //!
@@ -53,8 +60,6 @@
 //!
 //!
 //!
-//!
-
 #![no_std]
 
 #[macro_use]

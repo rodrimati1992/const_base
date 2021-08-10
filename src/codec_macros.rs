@@ -1,4 +1,4 @@
-/// Decodes `$slice` into a `&[u8; N]` with the encoding determined by `$config`.
+/// Decodes the `$slice` constant into a `&[u8; N]` with the encoding determined by [`$config`].
 ///
 /// `$slice` can be a `&'static str`, `&'static [u8; N]`, or `&'static [u8]`.
 ///
@@ -60,6 +60,7 @@
 /// because the input string can't be `4 * n + 1` bytes long (`n` can be any positive integer).
 ///
 ///
+/// [`$config`]: crate::Config
 #[macro_export]
 macro_rules! decode {
     ($slice:expr, $config:expr $(,)*) => {{
@@ -79,7 +80,7 @@ macro_rules! decode {
     }};
 }
 
-/// Encodes `$slice` into a `&[u8; N]` with the encoding determined by `$config`.
+/// Encodes the `$slice` constant into a `&[u8; N]` with the encoding determined by [`$config`].
 ///
 /// `$slice` slice can be a `&'static str`, `&'static [u8; N]`, or `&'static [u8]`.
 ///
@@ -105,6 +106,8 @@ macro_rules! decode {
 /// }
 /// ```
 ///
+///
+/// [`$config`]: crate::Config
 #[macro_export]
 macro_rules! encode {
     ($slice:expr, $config:expr $(,)*) => {{
@@ -120,7 +123,7 @@ macro_rules! encode {
     }};
 }
 
-/// Encodes `$slice` into a `&str` with the encoding determined by `$config`.
+/// Encodes the `$slice` constant into a `&str` with the encoding determined by [`$config`].
 ///
 /// `$slice` can be a `&'static str`, `&'static [u8; N]`, or `&'static [u8]`.
 ///
@@ -146,6 +149,8 @@ macro_rules! encode {
 /// }
 /// ```
 ///
+///
+/// [`$config`]: crate::Config
 #[macro_export]
 macro_rules! encode_as_str {
     ($slice:expr, $config:expr $(,)*) => {{
