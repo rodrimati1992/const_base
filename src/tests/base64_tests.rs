@@ -184,21 +184,48 @@ fn test_decode_base64_errors() {
         assert_eq!(ok, [4, 0, 2, 0, 0]);
     }
 
+    let mut invalid_bytes = crate::test_utils::ByteSet([true; 256]);
+    invalid_bytes.remove_range(b'A'..=b'Z');
+    invalid_bytes.remove_range(b'a'..=b'z');
+    invalid_bytes.remove_range(b'0'..=b'9');
+
+    let mut invalid_std_bytes = invalid_bytes.clone();
+    invalid_std_bytes.remove(b'+');
+    invalid_std_bytes.remove(b'/');
+
+    let mut invalid_url_bytes = invalid_bytes.clone();
+    invalid_url_bytes.remove(b'-');
+    invalid_url_bytes.remove(b'_');
+
+    let invalid_bytes_iters = invalid_std_bytes
+        .iter()
+        .map(|b| (Config::B64, b))
+        .chain(invalid_url_bytes.iter().map(|b| (Config::B64_URL_SAFE, b)));
+
     // InvalidByte
-    {
-        let err = decode::<3>(b"AA\x00A", Config::B64).unwrap_err();
-        assert!(
-            matches!(
-                &err,
-                DecodeError::InvalidByte(x)
-                if x.index() == 2 &&
-                    x.byte() == b'\x00' &&
-                    x.byte_as_char() == '\x00' &&
-                    x.encoding() == Encoding::Base64(B64CharSet::Standard)
-            ),
-            "{:?}",
-            err
-        );
+    for (cfg, (b, is_invalid)) in invalid_bytes_iters {
+        let mut bytes = *b"AA\x00A";
+        bytes[2] = b;
+        let res = decode::<3>(&bytes, cfg);
+
+        if is_invalid {
+            let err = res.unwrap_err();
+            assert!(
+                matches!(
+                    &err,
+                    DecodeError::InvalidByte(x)
+                    if x.index() == 2 &&
+                        x.byte() == b &&
+                        x.byte_as_char() == b as char &&
+                        x.encoding() == cfg.encoding
+                ),
+                "\n{:?}\ncfg: {:?}",
+                err,
+                cfg,
+            );
+        } else {
+            res.unwrap();
+        }
     }
     {
         let err = decode::<4>(b"AAA\x00AA", Config::B64).unwrap_err();
