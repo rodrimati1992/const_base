@@ -18,7 +18,7 @@ fn test_encode_decode() {
                 (hex::HEXLOWER_PERMISSIVE, Config::HEX_LOWER),
             ];
 
-            for (daten_cfg, cfg) in cfgs {
+            for (daten_cfg, cfg) in cfgs.iter() {
                 for _ in 0..100 {
                     let input = rng.gen::<[u8; $in_length]>();
 
