@@ -47,6 +47,19 @@ fn test_encode_decode() {
 }
 
 #[test]
+fn test_encode_hex_errors() {
+    {
+        let err = Config::HEX.encode::<3>(&[0xAB, 0xCD]).unwrap_err();
+        assert!(err.expected() == 3 && err.found() == 4, "{:?}", err);
+    }
+    assert_eq!(Config::HEX.encode::<4>(&[0xAB, 0xCD]).unwrap(), *b"ABCD");
+    {
+        let err = Config::HEX.encode::<5>(&[0xAB, 0xCD]).unwrap_err();
+        assert!(err.expected() == 5 && err.found() == 4, "{:?}", err);
+    }
+}
+
+#[test]
 fn test_decode_hex_errors() {
     let mut invalid_bytes = crate::test_utils::ByteSet([true; 256]);
     invalid_bytes.remove_range(b'0'..=b'9');

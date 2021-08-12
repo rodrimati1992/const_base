@@ -75,6 +75,38 @@ fn test_encode_base32() {
 }
 
 #[test]
+fn test_encode_b32_errors() {
+    // No end padding
+    {
+        let unpad_cfg = Config::B32.end_padding(false);
+
+        {
+            let err = unpad_cfg.encode::<3>(&[0xAB, 0xCD]).unwrap_err();
+            assert!(err.expected() == 3 && err.found() == 4, "{:?}", err);
+        }
+        assert_eq!(unpad_cfg.encode::<4>(&[0xAB, 0xCD]).unwrap(), *b"VPGQ");
+        {
+            let err = unpad_cfg.encode::<5>(&[0xAB, 0xCD]).unwrap_err();
+            assert!(err.expected() == 5 && err.found() == 4, "{:?}", err);
+        }
+    }
+
+    // With end padding
+    {
+        let err = Config::B32.encode::<7>(&[0xAB, 0xCD]).unwrap_err();
+        assert!(err.expected() == 7 && err.found() == 8, "{:?}", err);
+    }
+    assert_eq!(
+        Config::B32.encode::<8>(&[0xAB, 0xCD]).unwrap(),
+        *b"VPGQ===="
+    );
+    {
+        let err = Config::B32.encode::<9>(&[0xAB, 0xCD]).unwrap_err();
+        assert!(err.expected() == 9 && err.found() == 8, "{:?}", err);
+    }
+}
+
+#[test]
 fn test_decode_base32() {
     let mut rng = SmallRng::seed_from_u64(6249204433781597762);
 

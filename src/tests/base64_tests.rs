@@ -157,6 +157,35 @@ fn test_decode_base64() {
 }
 
 #[test]
+fn test_encode_b64_errors() {
+    // No end padding
+    {
+        let unpad_cfg = Config::B64.end_padding(false);
+
+        {
+            let err = unpad_cfg.encode::<2>(&[0xAB, 0xCD]).unwrap_err();
+            assert!(err.expected() == 2 && err.found() == 3, "{:?}", err);
+        }
+        assert_eq!(unpad_cfg.encode::<3>(&[0xAB, 0xCD]).unwrap(), *b"q80");
+        {
+            let err = unpad_cfg.encode::<4>(&[0xAB, 0xCD]).unwrap_err();
+            assert!(err.expected() == 4 && err.found() == 3, "{:?}", err);
+        }
+    }
+
+    // With end padding
+    {
+        let err = Config::B64.encode::<3>(&[0xAB, 0xCD]).unwrap_err();
+        assert!(err.expected() == 3 && err.found() == 4, "{:?}", err);
+    }
+    assert_eq!(Config::B64.encode::<4>(&[0xAB, 0xCD]).unwrap(), *b"q80=");
+    {
+        let err = Config::B64.encode::<5>(&[0xAB, 0xCD]).unwrap_err();
+        assert!(err.expected() == 5 && err.found() == 4, "{:?}", err);
+    }
+}
+
+#[test]
 fn test_decode_base64_errors() {
     {
         // intentionally padded to this length
