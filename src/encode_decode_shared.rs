@@ -5,6 +5,8 @@ use crate::{Config, DecodeError, Encoding};
 ///
 /// # Example
 ///
+/// ### Base64
+///
 /// ```rust
 /// use const_base::{Config, encoded_len};
 ///
@@ -17,6 +19,23 @@ use crate::{Config, DecodeError, Encoding};
 /// assert_eq!(BASE64_UNPAD, 6);
 ///
 /// ```
+///
+/// ### Base32
+///
+///
+/// ```rust
+/// use const_base::{Config, encoded_len};
+///
+/// const BASE32: usize = encoded_len(3, Config::B32);
+/// assert_eq!(BASE32, 8);
+///
+/// // `.end_padding(false)` removes that trailing `=` that pads the string to
+/// // a multiple of 8 bytes long.
+/// const BASE32_UNPAD: usize = encoded_len(3, Config::B32.end_padding(false));
+/// assert_eq!(BASE32_UNPAD, 5);
+///
+/// ```
+
 pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
     match config.encoding {
         Encoding::Base64(_) => crate::base_64::encoded_len(unencoded_length, config),
@@ -50,6 +69,24 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 ///     assert_eq!(ENCODED, *b"QllF");
 /// }
 /// ```
+///
+/// ### Base 32
+///
+/// ```rust
+/// use const_base::{Config, encode, unwrap_or, utils::repeated};
+///
+/// {
+///     const ENCODED: [u8; 8] = unwrap_or!(encode(b"fox", Config::B32), repeated(0xFF));
+///
+///     assert_eq!(ENCODED, *b"MZXXQ===");
+/// }
+/// {
+///     const CFG: Config = Config::B32.end_padding(false);
+///     const ENCODED: [u8; 5] = unwrap_or!(encode(b"dog", CFG), repeated(0xFF));
+///
+///     assert_eq!(ENCODED, *b"MRXWO");
+/// }
+/// ```
 pub const fn encode<const OUT: usize>(
     input: &[u8],
     config: Config,
@@ -65,6 +102,8 @@ pub const fn encode<const OUT: usize>(
 ///
 /// # Example
 ///
+/// ### Base 64
+///
 /// ```rust
 /// use const_base::{Config, decoded_len};
 ///
@@ -75,6 +114,22 @@ pub const fn encode<const OUT: usize>(
 ///     decoded_len(b"fo==", Config::B64),
 /// ];
 /// assert_eq!(BASE64, [4, 2, 1]);
+///
+/// ```
+///
+/// ### Base 32
+///
+/// ```rust
+/// use const_base::{Config, decoded_len};
+///
+/// const BASE64: &[usize] = &[
+///     // this crate allows an arbitrary amount of trailing `=` in the decoded string.
+///     decoded_len(b"foooooo=======", Config::B32),
+///     decoded_len(b"foooo=", Config::B32),
+///     decoded_len(b"fooo=", Config::B32),
+///     decoded_len(b"fo==", Config::B32),
+/// ];
+/// assert_eq!(BASE64, [4, 3, 2, 1]);
 ///
 /// ```
 pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
@@ -133,6 +188,29 @@ pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
 /// }
 ///
 /// ```
+///
+/// ### Base 32
+///
+/// ```rust
+/// use const_base::{
+///     Config, DecodeError, decode, unwrap_or,
+///     utils::repeated,
+/// };
+///
+/// {
+///     const OUT: [u8; 3] = unwrap_or!(decode(b"MNQXI===", Config::B32), repeated(0xFF));
+///
+///     assert_eq!(OUT, *b"cat");
+/// }
+/// {
+///     const OUT: [u8; 3] =
+///         unwrap_or!(decode(b"MNQXI", Config::B32.end_padding(false)), repeated(0xFF));
+///
+///     assert_eq!(OUT, *b"cat");
+/// }
+///
+/// ```
+///
 pub const fn decode<const OUT: usize>(
     input: &[u8],
     config: Config,

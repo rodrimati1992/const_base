@@ -94,8 +94,6 @@ impl Config {
 
 /// <div id = "associated-consts"></div>
 impl Config {
-    pub const B32: Self = Self::new(Encoding::Base32(B32CharSet::Standard));
-
     /// Configuration with the [`Base64`](crate::Encoding::Base64) encoding,
     /// using the [`Standard`](crate::B64CharSet::Standard) character set.
     ///
@@ -121,4 +119,18 @@ impl Config {
     /// ```
     ///
     pub const B64_URL_SAFE: Self = Self::new(Encoding::Base64(B64CharSet::UrlSafe));
+
+    /// Configuration with the [`Base32`](crate::Encoding::Base32) encoding,
+    /// using the [`Standard`](crate::B32CharSet::Standard) character set.
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use const_base::{Config, encode};
+    ///
+    /// assert_eq!(encode!(b"neat", Config::B32), b"NZSWC5A=");
+    /// ```
+    ///
+    pub const B32: Self = Self::new(Encoding::Base32(B32CharSet::Standard));
 }

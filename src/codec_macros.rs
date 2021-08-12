@@ -31,6 +31,18 @@
 /// }
 /// ```
 ///
+/// ### Base 32
+///
+/// ```rust
+/// # fn main(){
+/// use const_base::{decode, Config};
+///
+/// const OUT: &[u8] = decode!("MZXCA3LBNFXCQKJAPN6Q====", Config::B32);
+///     
+/// assert_eq!(OUT, b"fn main() {}");
+/// # }
+/// ```
+///
 /// <div id = "erroring-example"></div>
 ///
 /// ### Erroring
@@ -106,6 +118,16 @@ macro_rules! decode {
 /// }
 /// ```
 ///
+/// ### Base 32
+///
+/// ```rust
+/// use const_base::{encode, Config};
+///
+/// const OUT: &[u8] = encode!(&[3, 5, 8], Config::B32);
+///     
+/// assert_eq!(OUT, b"AMCQQ===");
+/// ```
+///
 ///
 /// [`$config`]: crate::Config
 #[macro_export]
@@ -148,6 +170,17 @@ macro_rules! encode {
 ///     assert_eq!(OUT, "Z29vZGJ5ZQ==");
 /// }
 /// ```
+///
+/// ### Base 32
+///
+/// ```rust
+/// use const_base::{encode_as_str, Config};
+///
+/// const OUT: &str = encode_as_str!(&[13, 21, 34], Config::B32);
+///     
+/// assert_eq!(OUT, "BUKSE===");
+/// ```
+///
 ///
 ///
 /// [`$config`]: crate::Config

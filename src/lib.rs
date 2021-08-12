@@ -1,4 +1,4 @@
-//! For decoding/encoding base 64 strings at compile-time.
+//! For decoding/encoding base 64/32/16 strings at compile-time.
 //!
 //! # Examples
 //!
@@ -31,7 +31,7 @@
 //! use const_base::{decode, Config};
 //!
 //! {
-//!     const OUT: &[u8] = decode!("Zm9v", Config::B64);
+//!     const OUT: &[u8] = decode!("MZXW6===", Config::B32);
 //!     
 //!     assert_eq!(OUT, b"foo");
 //! }
@@ -85,6 +85,9 @@ mod encode_decode_shared;
 mod macros;
 
 pub mod utils;
+
+#[cfg(test)]
+mod test_utils;
 
 #[doc(hidden)]
 pub mod __macro_args;
