@@ -31,6 +31,31 @@
 /// }
 /// ```
 ///
+/// ### Base 32
+///
+/// ```rust
+/// # fn main(){
+/// use const_base::{decode, Config};
+///
+/// const OUT: &[u8] = decode!("MZXCA3LBNFXCQKJAPN6Q====", Config::B32);
+///     
+/// assert_eq!(OUT, b"fn main() {}");
+/// # }
+/// ```
+///
+/// <div id = "erroring-example"></div>
+///
+///
+/// ### Hexadecimal
+///
+/// ```rust
+/// use const_base::{decode, Config};
+///
+/// const OUT: &[u8] = decode!("F00B", Config::HEX);
+///     
+/// assert_eq!(OUT, &[0xF0, 0x0B]);
+/// ```
+///
 /// <div id = "erroring-example"></div>
 ///
 /// ### Erroring
@@ -106,6 +131,39 @@ macro_rules! decode {
 /// }
 /// ```
 ///
+/// ### Base 32
+///
+/// ```rust
+/// use const_base::{encode, Config};
+///
+/// const OUT: &[u8] = encode!(&[3, 5, 8], Config::B32);
+///     
+/// assert_eq!(OUT, b"AMCQQ===");
+/// ```
+///
+/// ### Base 32
+///
+/// ```rust
+/// use const_base::{encode, Config};
+///
+/// const OUT: &[u8] = encode!(&[3, 5, 8], Config::B32);
+///     
+/// assert_eq!(OUT, b"AMCQQ===");
+/// ```
+///
+/// ### Hexadecimal
+///
+/// ```rust
+/// use const_base::{encode, Config};
+///
+/// const LOWER: &[u8] = encode!(&[0xB0, 0x01], Config::HEX_LOWER);
+/// const UPPER: &[u8] = encode!(&[0xB0, 0x01], Config::HEX);
+///     
+/// assert_eq!(LOWER, b"b001");
+/// assert_eq!(UPPER, b"B001");
+/// ```
+///
+///
 ///
 /// [`$config`]: crate::Config
 #[macro_export]
@@ -147,6 +205,28 @@ macro_rules! encode {
 ///     
 ///     assert_eq!(OUT, "Z29vZGJ5ZQ==");
 /// }
+/// ```
+///
+/// ### Base 32
+///
+/// ```rust
+/// use const_base::{encode_as_str, Config};
+///
+/// const OUT: &str = encode_as_str!(&[13, 21, 34], Config::B32);
+///     
+/// assert_eq!(OUT, "BUKSE===");
+/// ```
+///
+/// ### Hexadecimal
+///
+/// ```rust
+/// use const_base::{encode_as_str, Config};
+///
+/// const LOWER: &str = encode_as_str!(&[0xB1, 0x00, 0x0d], Config::HEX_LOWER);
+/// const UPPER: &str = encode_as_str!(&[0xB1, 0x00, 0x0d], Config::HEX);
+///     
+/// assert_eq!(LOWER, "b1000d");
+/// assert_eq!(UPPER, "B1000D");
 /// ```
 ///
 ///
