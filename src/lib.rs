@@ -36,12 +36,12 @@
 //!     assert_eq!(OUT, b"foo");
 //! }
 //! {
-//!     const BYTES: &str = "aGVsbG8";
+//!     const BYTES: &[u8] = b"f000";
 //!
 //!     // this macro can decode non-literal constants
-//!     const OUT: &[u8] = decode!(BYTES, Config::B64_URL_SAFE.end_padding(false));
+//!     const OUT: &[u8] = decode!(BYTES, Config::HEX);
 //!     
-//!     assert_eq!(OUT, b"hello");
+//!     assert_eq!(OUT, &[0xF0, 0x00]);
 //! }
 //! ```
 //!
@@ -76,6 +76,8 @@ mod encoding;
 
 mod config;
 
+mod base_16;
+
 mod base_32;
 
 mod base_64;
@@ -103,7 +105,7 @@ pub mod __priv_utils;
 pub use crate::{
     config::Config,
     encode_decode_shared::*,
-    encoding::{B32CharSet, B64CharSet, Encoding},
+    encoding::{B32CharSet, B64CharSet, Encoding, HexCharSet},
     errors::{DecodeError, InvalidByte, InvalidInputLength, MismatchedOutputLength},
 };
 

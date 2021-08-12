@@ -4,8 +4,12 @@
 pub enum Encoding {
     /// The Base64 encoding.
     Base64(B64CharSet),
+
     /// The Base32 encoding.
     Base32(B32CharSet),
+
+    /// Hexadecimal encoding (also known as base 16).
+    Hex(HexCharSet),
 }
 
 /// Determines which characters are used for the Base64 encoding
@@ -24,6 +28,29 @@ pub enum B64CharSet {
     /// ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_
     /// ```
     UrlSafe,
+}
+
+/// Determines which characters are used for the Hexadecimal encoding
+///
+/// Note that decoding is permissive,
+/// `HexCharSet::Lowercase` allows `ABCDEF` in the decoded string,
+/// and `HexCharSet::Uppercase` allows `abcdef` in the decoded string.
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum HexCharSet {
+    /// Uses these characters:
+    ///
+    /// ```text
+    /// 0123456789abcdef
+    /// ```
+    Lowercase,
+    /// Uses these characters:
+    ///
+    /// ```text
+    /// 0123456789ABCDEF
+    /// ```
+    ///
+    Uppercase,
 }
 
 /// Determines which characters are used for the Base32 encoding

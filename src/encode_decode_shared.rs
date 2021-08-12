@@ -22,7 +22,6 @@ use crate::{Config, DecodeError, Encoding};
 ///
 /// ### Base32
 ///
-///
 /// ```rust
 /// use const_base::{Config, encoded_len};
 ///
@@ -35,11 +34,25 @@ use crate::{Config, DecodeError, Encoding};
 /// assert_eq!(BASE32_UNPAD, 5);
 ///
 /// ```
-
+///
+/// ### Hexadecimal
+///
+/// ```rust
+/// use const_base::{Config, encoded_len};
+///
+/// const HEX_4: usize = encoded_len(4, Config::HEX);
+/// const HEX_6: usize = encoded_len(6, Config::HEX);
+/// assert_eq!(HEX_4, 8);
+/// assert_eq!(HEX_6, 12);
+/// ```
+///
+///
+///
 pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
     match config.encoding {
         Encoding::Base64(_) => crate::base_64::encoded_len(unencoded_length, config),
         Encoding::Base32(_) => crate::base_32::encoded_len(unencoded_length, config),
+        Encoding::Hex(_) => crate::base_16::encoded_len(unencoded_length, config),
     }
 }
 
@@ -87,6 +100,21 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 ///     assert_eq!(ENCODED, *b"MRXWO");
 /// }
 /// ```
+///
+/// ### Hexadecimal
+///
+/// ```rust
+/// use const_base::{Config, encode, unwrap_or, utils::repeated};
+///
+/// {
+///     const LOWER: [u8; 8] = unwrap_or!(encode(b"bluh", Config::HEX_LOWER), repeated(0xFF));
+///     const UPPER: [u8; 8] = unwrap_or!(encode(b"bluh", Config::HEX), repeated(0xFF));
+///
+///     assert_eq!(LOWER, *b"626c7568");
+///     assert_eq!(UPPER, *b"626C7568");
+/// }
+/// ```
+///
 pub const fn encode<const OUT: usize>(
     input: &[u8],
     config: Config,
@@ -94,6 +122,7 @@ pub const fn encode<const OUT: usize>(
     match config.encoding {
         Encoding::Base64(cset) => crate::base_64::encode(input, config, cset),
         Encoding::Base32(cset) => crate::base_32::encode(input, config, cset),
+        Encoding::Hex(cset) => crate::base_16::encode(input, config, cset),
     }
 }
 
@@ -122,20 +151,36 @@ pub const fn encode<const OUT: usize>(
 /// ```rust
 /// use const_base::{Config, decoded_len};
 ///
-/// const BASE64: &[usize] = &[
+/// const BASE32: &[usize] = &[
 ///     // this crate allows an arbitrary amount of trailing `=` in the decoded string.
 ///     decoded_len(b"foooooo=======", Config::B32),
 ///     decoded_len(b"foooo=", Config::B32),
 ///     decoded_len(b"fooo=", Config::B32),
 ///     decoded_len(b"fo==", Config::B32),
 /// ];
-/// assert_eq!(BASE64, [4, 3, 2, 1]);
+/// assert_eq!(BASE32, [4, 3, 2, 1]);
+///
+/// ```
+///
+/// ### Hexadecimal
+///
+/// ```rust
+/// use const_base::{Config, decoded_len};
+///
+/// const BASE32: &[usize] = &[
+///     decoded_len(b"F000B1E5", Config::HEX),
+///     decoded_len(b"F000B1", Config::HEX),
+///     decoded_len(b"F00B", Config::HEX),
+///     decoded_len(b"F0", Config::HEX),
+/// ];
+/// assert_eq!(BASE32, [4, 3, 2, 1]);
 ///
 /// ```
 pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
     match config.encoding {
         Encoding::Base64(_) => crate::base_64::decoded_len(encoded, config),
         Encoding::Base32(_) => crate::base_32::decoded_len(encoded, config),
+        Encoding::Hex(_) => crate::base_16::decoded_len(encoded, config),
     }
 }
 
@@ -211,6 +256,19 @@ pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
 ///
 /// ```
 ///
+/// ### Hexadecimal
+///
+/// ```rust
+/// use const_base::{
+///     Config, DecodeError, decode, unwrap_or,
+///     utils::repeated,
+/// };
+///
+/// const OUT: [u8; 4] = unwrap_or!(decode(b"f09f918d", Config::HEX), repeated(0xFF));
+/// assert_eq!(OUT, "👍".as_bytes());
+///
+/// ```
+///
 pub const fn decode<const OUT: usize>(
     input: &[u8],
     config: Config,
@@ -218,6 +276,7 @@ pub const fn decode<const OUT: usize>(
     match config.encoding {
         Encoding::Base64(cset) => crate::base_64::decode(input, config, cset),
         Encoding::Base32(cset) => crate::base_32::decode(input, config, cset),
+        Encoding::Hex(_) => crate::base_16::decode(input, config),
     }
 }
 
