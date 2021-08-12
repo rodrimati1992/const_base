@@ -76,7 +76,7 @@ mod encoding;
 
 mod config;
 
-// mod base_32;
+mod base_32;
 
 mod base_64;
 

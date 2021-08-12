@@ -20,6 +20,7 @@ use crate::{Config, DecodeError, Encoding};
 pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
     match config.encoding {
         Encoding::Base64(_) => crate::base_64::encoded_len(unencoded_length, config),
+        Encoding::Base32(_) => crate::base_32::encoded_len(unencoded_length, config),
     }
 }
 
@@ -55,6 +56,7 @@ pub const fn encode<const OUT: usize>(
 ) -> Result<[u8; OUT], crate::MismatchedOutputLength> {
     match config.encoding {
         Encoding::Base64(cset) => crate::base_64::encode(input, config, cset),
+        Encoding::Base32(cset) => crate::base_32::encode(input, config, cset),
     }
 }
 
@@ -78,6 +80,7 @@ pub const fn encode<const OUT: usize>(
 pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
     match config.encoding {
         Encoding::Base64(_) => crate::base_64::decoded_len(encoded, config),
+        Encoding::Base32(_) => crate::base_32::decoded_len(encoded, config),
     }
 }
 
@@ -136,6 +139,7 @@ pub const fn decode<const OUT: usize>(
 ) -> Result<[u8; OUT], DecodeError> {
     match config.encoding {
         Encoding::Base64(cset) => crate::base_64::decode(input, config, cset),
+        Encoding::Base32(cset) => crate::base_32::decode(input, config, cset),
     }
 }
 
@@ -240,9 +244,11 @@ pub(crate) use encode_bases;
 macro_rules! decode_bases {
     (
         dollar = $_:tt,
+        $encoding_ctor:expr,
         $input:ident,
         $config:ident,
         $char_set:ident,
+        $is_invalid_length:expr,
         |$in_i:ident| $decode_non_empty:expr
     ) => {
         use crate::encode_decode_shared::make_invalid_byte_err;
@@ -262,7 +268,7 @@ macro_rules! decode_bases {
             }
         }
 
-        if $input.len() % 4 == 1 {
+        if $is_invalid_length {
             return Err(DecodeError::InvalidInputLength(InvalidInputLength {
                 length: $input.len(),
             }));
@@ -290,7 +296,7 @@ macro_rules! decode_bases {
                         &[$_($new),*],
                         $input,
                         $in_i,
-                        Encoding::Base64($char_set)
+                        $encoding_ctor($char_set)
                     ));
                 }
             )

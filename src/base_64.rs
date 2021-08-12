@@ -44,7 +44,7 @@ pub(crate) const fn encode<const OUT: usize>(
     }
 }
 
-pub(crate) const fn decoded_len(mut input: &[u8], config: Config) -> usize {
+pub(crate) const fn decoded_len(input: &[u8], config: Config) -> usize {
     decoded_len_bases(input, config, 6)
 }
 
@@ -55,7 +55,9 @@ pub(crate) const fn decode<const OUT: usize>(
 ) -> Result<[u8; OUT], DecodeError> {
     crate::encode_decode_shared::decode_bases! {
         dollar = $,
+        Encoding::Base64,
         input, config, char_set,
+        input.len() % 4 == 1,
         |in_i| {
             while let [oa, ob, oc, od, ref rem @ ..] = *input {
                 from_encoded! {a = oa, b = ob, c = oc, d = od}

@@ -1,4 +1,4 @@
-use crate::{B64CharSet, Encoding};
+use crate::{B32CharSet, B64CharSet, Encoding};
 
 /// For configuring how a string is encoded/decoded.
 ///
@@ -94,6 +94,8 @@ impl Config {
 
 /// <div id = "associated-consts"></div>
 impl Config {
+    pub const B32: Self = Self::new(Encoding::Base32(B32CharSet::Standard));
+
     /// Configuration with the [`Base64`](crate::Encoding::Base64) encoding,
     /// using the [`Standard`](crate::B64CharSet::Standard) character set.
     ///

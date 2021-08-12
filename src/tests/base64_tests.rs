@@ -4,8 +4,6 @@ use crate::{B64CharSet, Config, DecodeError, Encoding};
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
-mod type_level_errors;
-
 #[test]
 fn test_encode_base64() {
     let mut rng = SmallRng::seed_from_u64(6249204433781597762);
@@ -32,7 +30,7 @@ fn test_encode_base64() {
                 b64_cfg = b64_cfg.pad(pad);
                 cfg = cfg.end_padding(pad);
 
-                for _ in 0..10 {
+                for _ in 0..100 {
                     let input = rng.gen::<[u8; $in_length]>();
 
                     let mut out_no_pad = [0u8; OUT_LEN_PAD];
@@ -108,7 +106,7 @@ fn test_decode_base64() {
                 b64_cfg = b64_cfg.pad(pad);
                 cfg = cfg.end_padding(pad);
 
-                for _ in 0..10 {
+                for _ in 0..100 {
                     let input = rng.gen::<[u8; DECODED_LEN]>();
 
                     let mut encoded_no_pad = [0u8; $encoded_length + 4];

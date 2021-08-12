@@ -4,6 +4,8 @@
 pub enum Encoding {
     /// The Base64 encoding.
     Base64(B64CharSet),
+    /// The Base32 encoding.
+    Base32(B32CharSet),
 }
 
 /// Determines which characters are used for the Base64 encoding
