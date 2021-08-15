@@ -1,3 +1,4 @@
+#[repr(C)]
 pub union PtrToRef<'a, T: ?Sized> {
     pub ptr: *const T,
     pub reff: &'a T,
