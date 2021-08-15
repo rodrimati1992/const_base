@@ -4,7 +4,7 @@ version = "0.1.1"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
 edition = "2018"
 license = "Zlib"
-description = "Compile-time encoding/decoding in a selection of bases (includes base 64)"
+description = "Decoding/encoding base 64/32/16 strings at compile-time"
 documentation = "https://docs.rs/const_base/"
 readme="./README.md"
 keywords = ["no-std", "encoding", "base64", "const-fn"]
@@ -18,6 +18,10 @@ include = [
 ]
 
 [dependencies]
+
+[dev-dependencies.data-encoding]
+version = "2.3.2"
+default_features = false
 
 [dev-dependencies.base64]
 version = "0.13.0"

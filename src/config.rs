@@ -1,4 +1,4 @@
-use crate::{B64CharSet, Encoding};
+use crate::{B32CharSet, B64CharSet, Encoding, HexCharSet};
 
 /// For configuring how a string is encoded/decoded.
 ///
@@ -119,4 +119,52 @@ impl Config {
     /// ```
     ///
     pub const B64_URL_SAFE: Self = Self::new(Encoding::Base64(B64CharSet::UrlSafe));
+
+    /// Configuration with the [`Base32`](crate::Encoding::Base32) encoding,
+    /// using the [`Standard`](crate::B32CharSet::Standard) character set.
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use const_base::{Config, encode};
+    ///
+    /// assert_eq!(encode!(b"neat", Config::B32), b"NZSWC5A=");
+    /// ```
+    ///
+    pub const B32: Self = Self::new(Encoding::Base32(B32CharSet::Standard));
+
+    /// Configuration with the [`Hex`](crate::Encoding::Hex) (hexadecimal) encoding,
+    /// using the [`Uppercase`](crate::HexCharSet::Uppercase) character set.
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use const_base::{Config, decode, encode};
+    ///
+    /// assert_eq!(encode!(&[0xF1, 0x00, 0x0f], Config::HEX), b"F1000F");
+    ///
+    /// // Hexademical decoding allows mixing uppercase and lowercase
+    /// assert_eq!(decode!(b"beefBEEF", Config::HEX), &[0xBE, 0xEF, 0xBE, 0xEF]);
+    /// ```
+    ///
+    pub const HEX: Self = Self::new(Encoding::Hex(HexCharSet::Uppercase));
+
+    /// Configuration with the [`Hex`](crate::Encoding::Hex) (hexadecimal) encoding,
+    /// using the [`Lowercase`](crate::HexCharSet::Lowercase) character set.
+    ///
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use const_base::{Config, decode, encode};
+    ///
+    /// assert_eq!(encode!(&[0xf1, 0x00, 0x0f], Config::HEX_LOWER), b"f1000f");
+    ///
+    /// // Hexademical decoding allows mixing uppercase and lowercase
+    /// assert_eq!(decode!(b"beefBEEF", Config::HEX_LOWER), &[0xBE, 0xEF, 0xBE, 0xEF]);
+    /// ```
+    ///
+    pub const HEX_LOWER: Self = Self::new(Encoding::Hex(HexCharSet::Lowercase));
 }

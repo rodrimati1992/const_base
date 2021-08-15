@@ -3,7 +3,7 @@
 [![api-docs](https://docs.rs/const_base/badge.svg)](https://docs.rs/const_base/*)
 
 
-For decoding/encoding base 64 strings at compile-time.
+For decoding/encoding base 64/32/16 strings at compile-time.
 
 # Examples
 
@@ -36,17 +36,17 @@ use const_base::{encode, encode_as_str, Config};
 use const_base::{decode, Config};
 
 {
-    const OUT: &[u8] = decode!("Zm9v", Config::B64);
+    const OUT: &[u8] = decode!("MZXW6===", Config::B32);
     
     assert_eq!(OUT, b"foo");
 }
 {
-    const BYTES: &str = "aGVsbG8";
+    const BYTES: &[u8] = b"f000";
 
     // this macro can decode non-literal constants
-    const OUT: &[u8] = decode!(BYTES, Config::B64_URL_SAFE.end_padding(false));
+    const OUT: &[u8] = decode!(BYTES, Config::HEX);
     
-    assert_eq!(OUT, b"hello");
+    assert_eq!(OUT, &[0xF0, 0x00]);
 }
 ```
 
