@@ -4,7 +4,7 @@ This changelog is a summary of the changes made in each release.
 
 ### 0.1.2
 
-Fixed representation of internally used union to `#[repr(C)]`.
+Potential unsoundness fix: changed representation of internally used union to `#[repr(C)]`.
 
 ### 0.1.1
 
