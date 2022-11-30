@@ -126,6 +126,11 @@ pub const fn encode<const OUT: usize>(
     }
 }
 
+#[doc(hidden)]
+pub const fn __priv_encode<const OUT: usize>(input: &[u8], config: Config) -> [u8; OUT] {
+    crate::errors::__unwrap_encode(encode(input, config))
+}
+
 /// Computes the length of the string obtained from decoding `encoded`
 /// with the encoding determined by `config`.
 ///
@@ -281,37 +286,8 @@ pub const fn decode<const OUT: usize>(
 }
 
 #[doc(hidden)]
-pub struct __AdjacentResult<T, E> {
-    pub ok: T,
-    pub err: Result<(), E>,
-}
-
-#[doc(hidden)]
-pub const fn __priv_encode<const OUT: usize>(
-    input: &[u8],
-    config: Config,
-) -> __AdjacentResult<[u8; OUT], crate::MismatchedOutputLength> {
-    match encode(input, config) {
-        Ok(ok) => __AdjacentResult { ok, err: Ok(()) },
-        Err(e) => __AdjacentResult {
-            ok: [0; OUT],
-            err: Err(e),
-        },
-    }
-}
-
-#[doc(hidden)]
-pub const fn __priv_decode<const OUT: usize>(
-    input: &[u8],
-    config: Config,
-) -> __AdjacentResult<[u8; OUT], DecodeError> {
-    match decode(input, config) {
-        Ok(ok) => __AdjacentResult { ok, err: Ok(()) },
-        Err(e) => __AdjacentResult {
-            ok: [0; OUT],
-            err: Err(e),
-        },
-    }
+pub const fn __priv_decode<const OUT: usize>(input: &[u8], config: Config) -> [u8; OUT] {
+    crate::errors::__unwrap_decode(decode(input, config))
 }
 
 pub(crate) const fn encoded_len_bases(
@@ -408,6 +384,7 @@ macro_rules! decode_bases {
         if $is_invalid_length {
             return Err(DecodeError::InvalidInputLength(InvalidInputLength {
                 length: $input.len(),
+                enc: $config.encoding,
             }));
         } else if output_len != OUT {
             return Err(DecodeError::MismatchedOutputLength(

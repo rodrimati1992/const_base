@@ -92,15 +92,10 @@ macro_rules! decode {
         const __P_NHPMWYD3NJA: $crate::__::CodecArgs =
             $crate::__::DecodeArgsFrom($slice, $config).conv();
         {
-            const OUT: &$crate::__AdjacentResult<
-                [$crate::__::u8; __P_NHPMWYD3NJA.out_len],
-                $crate::DecodeError,
-            > = &$crate::__priv_decode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg);
+            const OUT: &[$crate::__::u8; __P_NHPMWYD3NJA.out_len] =
+                &$crate::__priv_decode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg);
 
-            const _: $crate::msg::IsOk =
-                $crate::__result_tuple_to_singleton!($crate::msg::__decode_res_to_tuple(&OUT.err));
-
-            &OUT.ok
+            OUT
         }
     }};
 }
@@ -174,7 +169,7 @@ macro_rules! encode {
 
         {
             const OUT: &[$crate::__::u8; __P_NHPMWYD3NJA.out_len] =
-                &$crate::__priv_encode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg).ok;
+                &$crate::__priv_encode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg);
 
             OUT
         }
@@ -235,22 +230,7 @@ macro_rules! encode {
 macro_rules! encode_as_str {
     ($slice:expr, $config:expr $(,)*) => {{
         const OUT_NHPMWYD3NJA: &$crate::__::str =
-            unsafe { $crate::__priv_transmute_bytes_to_str!($crate::encode!($slice, $config)) };
+            unsafe { $crate::__::from_utf8_unchecked($crate::encode!($slice, $config)) };
         OUT_NHPMWYD3NJA
-    }};
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __priv_transmute_bytes_to_str {
-    ($bytes:expr) => {{
-        let bytes: &'static [$crate::__::u8] = $bytes;
-        let string: &'static $crate::__::str = {
-            $crate::__priv_utils::PtrToRef {
-                ptr: bytes as *const [$crate::__::u8] as *const $crate::__::str,
-            }
-            .reff
-        };
-        string
     }};
 }

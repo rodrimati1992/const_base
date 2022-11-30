@@ -69,9 +69,6 @@ mod codec_macros;
 #[macro_use]
 mod internal_macros;
 
-#[macro_use]
-mod msg_macros;
-
 mod encoding;
 
 mod config;
@@ -97,9 +94,6 @@ pub mod __macro_args;
 pub mod errors;
 
 #[doc(hidden)]
-pub mod msg;
-
-#[doc(hidden)]
 pub mod __priv_utils;
 
 pub use crate::{
@@ -118,6 +112,7 @@ pub mod __ {
         ops::Range,
         primitive::{str, u8, usize},
         result::Result::{self, Err, Ok},
+        str::from_utf8_unchecked,
     };
 
     pub use crate::__macro_args::*;

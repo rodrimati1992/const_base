@@ -65,6 +65,25 @@ pub enum B32CharSet {
     Standard,
 }
 
+impl Encoding {
+    pub(crate) const fn name(self) -> &'static str {
+        match self {
+            Encoding::Base64 { .. } => "base-64",
+            Encoding::Base32 { .. } => "base-32",
+            Encoding::Hex { .. } => "hexadecimal",
+        }
+    }
+    pub(crate) const fn full_name(self) -> &'static str {
+        match self {
+            Encoding::Base64(B64CharSet::Standard) => "base-64(standard)",
+            Encoding::Base64(B64CharSet::UrlSafe) => "base-64(url-safe)",
+            Encoding::Base32(B32CharSet::Standard) => "base-32",
+            Encoding::Hex(HexCharSet::Uppercase) => "hexadecimal(uppercase)",
+            Encoding::Hex(HexCharSet::Lowercase) => "hexadecimal(lowercase)",
+        }
+    }
+}
+
 pub(crate) struct CharSetLookup<const CHARS: usize> {
     pub(crate) into_enc: [u8; CHARS],
     pub(crate) from_enc: [u8; 256],

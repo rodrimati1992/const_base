@@ -79,8 +79,8 @@ pub(crate) const fn decode<const OUT: usize>(
                     from_encoded! {a = oa, b = ob}
                     write_out!(a << 2 | (b >> 4));
                 }
-                [_] => [/* unreachable */][input.len()],
-                _ => {}
+                [] => {}
+                _ => panic!("BUG: `input` can't be an invalid length here"),
             }
         }
     }

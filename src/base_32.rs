@@ -170,7 +170,8 @@ pub(crate) const fn decode<const OUT: usize>(
 
                     write_out!(buffer as u8);
                 }
-                _ => {}
+                [] => {}
+                _ => panic!("BUG: `input` can't be an invalid length here."),
             }
         }
     }

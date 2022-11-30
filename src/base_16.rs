@@ -62,6 +62,7 @@ pub(crate) const fn decode<const OUT: usize>(
     if input.len() % 2 == 1 {
         return Err(DecodeError::InvalidInputLength(crate::InvalidInputLength {
             length: input.len(),
+            enc: config.encoding,
         }));
     } else if output_len != OUT {
         return Err(DecodeError::MismatchedOutputLength(
@@ -98,6 +99,10 @@ pub(crate) const fn decode<const OUT: usize>(
 
         input = rem;
         in_i += 2;
+    }
+
+    if input.len() == 1 {
+        panic!("BUG: `input` can't be length 1 here")
     }
 
     Ok(out)
