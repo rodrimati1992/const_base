@@ -24,7 +24,7 @@ pub enum DecodeError {
 
 impl DecodeError {
     #[track_caller]
-    pub const fn panic(self) -> ! {
+    pub const fn panic(&self) -> ! {
         match self {
             DecodeError::InvalidByte(x) => x.panic(),
             DecodeError::MismatchedOutputLength(x) => x.panic(),
@@ -175,15 +175,6 @@ impl InvalidInputLength {
             PanicVal::write_str(": "),
             PanicVal::from_usize(self.length, FmtArg::DEBUG),
         ])
-    }
-}
-
-#[doc(hidden)]
-#[track_caller]
-pub const fn __unwrap_decode<const N: usize>(res: Result<[u8; N], DecodeError>) -> [u8; N] {
-    match res {
-        Ok(x) => x,
-        Err(e) => e.panic(),
     }
 }
 

@@ -187,7 +187,7 @@ fn test_decode_base32_errors() {
     }
     {
         let ok = decode::<0>(b"", Config::B32.end_padding(true)).unwrap();
-        assert_eq!(ok, []);
+        assert_eq!(ok, [0u8; 0]);
     }
 
     let mut invalid_bytes = crate::test_utils::ByteSet([true; 256]);

@@ -68,15 +68,15 @@
 /// ```
 /// produce compile-time errors that look like this:
 /// ```text
-/// error[E0308]: mismatched types
-///  --> src/codec_macros.rs:39:1
+/// error[E0080]: evaluation of constant value failed
+///  --> src/codec_macros.rs:67:1
 ///   |
 /// 5 | decode!("A", Config::B64);
-///   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `IsOk`, found struct `const_base::msg::InvalidInputLength`
-///   |
-///   = note: expected struct `IsOk`
-///              found struct `const_base::msg::InvalidInputLength<length<1_usize>>`
-///   = note: this error originates in the macro `$crate::__result_tuple_to_singleton` (in Nightly builds, run with -Z macro-backtrace for more info)
+///   | ^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
+///
+/// invalid input length for base-64: 1
+///
+/// ', src/codec_macros.rs:5:1
 ///
 /// ```
 /// This macro emulates panics using type errors like those.
@@ -92,10 +92,12 @@ macro_rules! decode {
         const __P_NHPMWYD3NJA: $crate::__::CodecArgs =
             $crate::__::DecodeArgsFrom($slice, $config).conv();
         {
-            const OUT: &[$crate::__::u8; __P_NHPMWYD3NJA.out_len] =
+            const RES: &$crate::__DecodeResult<{ __P_NHPMWYD3NJA.out_len }> =
                 &$crate::__priv_decode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg);
 
-            OUT
+            const _: () = RES.assert_ok();
+
+            &RES.array
         }
     }};
 }

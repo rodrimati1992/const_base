@@ -286,8 +286,31 @@ pub const fn decode<const OUT: usize>(
 }
 
 #[doc(hidden)]
-pub const fn __priv_decode<const OUT: usize>(input: &[u8], config: Config) -> [u8; OUT] {
-    crate::errors::__unwrap_decode(decode(input, config))
+pub const fn __priv_decode<const OUT: usize>(input: &[u8], config: Config) -> __DecodeResult<OUT> {
+    match decode(input, config) {
+        Ok(array) => __DecodeResult { array, err: None },
+        Err(err) => __DecodeResult {
+            array: [0; OUT],
+            err: Some(err),
+        },
+    }
+}
+
+// used to workaround error reporting for panicking constants,
+// by panicking on a separate constant that's not used by anything
+#[doc(hidden)]
+pub struct __DecodeResult<const OUT: usize> {
+    pub array: [u8; OUT],
+    pub err: Option<DecodeError>,
+}
+
+impl<const OUT: usize> __DecodeResult<OUT> {
+    #[track_caller]
+    pub const fn assert_ok(&self) {
+        if let Some(err) = &self.err {
+            err.panic();
+        }
+    }
 }
 
 pub(crate) const fn encoded_len_bases(

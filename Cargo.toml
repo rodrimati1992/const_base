@@ -30,6 +30,9 @@ default_features = false
 version = "0.13.0"
 default_features = false
 
+[dev-dependencies.trybuild]
+version = "1.0"
+
 [dev-dependencies.rand]
 version = "0.8"
 default_features = false
