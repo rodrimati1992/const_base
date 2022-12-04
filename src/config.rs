@@ -25,7 +25,7 @@ impl Config {
     ///
     /// // The same as `Config::B64`
     /// const CFG: Config = Config::new(Encoding::Base64(B64CharSet::Standard));
-    /// assert_eq!(encode!("Rust", CFG), b"UnVzdA==")
+    /// assert_eq!(encode!("Rust", CFG), "UnVzdA==")
     ///
     /// ```
     pub const fn new(encoding: Encoding) -> Self {
@@ -45,11 +45,11 @@ impl Config {
     /// ```rust
     /// use const_base::{B64CharSet, Config, Encoding, encode};
     ///
-    /// assert_eq!(encode!("Rust", Config::B64), b"UnVzdA==");
+    /// assert_eq!(encode!("Rust", Config::B64), "UnVzdA==");
     ///
-    /// assert_eq!(encode!("Rust", Config::B64.end_padding(true)), b"UnVzdA==");
+    /// assert_eq!(encode!("Rust", Config::B64.end_padding(true)), "UnVzdA==");
     ///
-    /// assert_eq!(encode!("Rust", Config::B64.end_padding(false)), b"UnVzdA");
+    /// assert_eq!(encode!("Rust", Config::B64.end_padding(false)), "UnVzdA");
     ///
     /// ```
     pub const fn end_padding(mut self, have: bool) -> Self {
@@ -64,13 +64,13 @@ impl Config {
     /// ```rust
     /// use const_base::{Config, encode};
     ///
-    /// assert_eq!(Config::B64.encode::<8>(b"Rust"), Ok(*b"UnVzdA=="));
+    /// assert_eq!(Config::B64.encode::<8>(b"Rust").unwrap(), "UnVzdA==");
     /// ```
     #[inline(always)]
     pub const fn encode<const OUT: usize>(
         self,
         input: &[u8],
-    ) -> Result<[u8; OUT], crate::MismatchedOutputLength> {
+    ) -> Result<crate::ArrayStr<OUT>, crate::WrongLength> {
         crate::encode(input, self)
     }
 
@@ -102,7 +102,7 @@ impl Config {
     /// ```rust
     /// use const_base::{Config, encode};
     ///
-    /// assert_eq!(encode!(&[23, 239, 192], Config::B64), b"F+/A");
+    /// assert_eq!(encode!(&[23, 239, 192], Config::B64), "F+/A");
     /// ```
     ///
     pub const B64: Self = Self::new(Encoding::Base64(B64CharSet::Standard));
@@ -115,7 +115,7 @@ impl Config {
     /// ```rust
     /// use const_base::{Config, encode};
     ///
-    /// assert_eq!(encode!(&[23, 239, 192], Config::B64_URL_SAFE), b"F-_A");
+    /// assert_eq!(encode!(&[23, 239, 192], Config::B64_URL_SAFE), "F-_A");
     /// ```
     ///
     pub const B64_URL_SAFE: Self = Self::new(Encoding::Base64(B64CharSet::UrlSafe));
@@ -129,7 +129,7 @@ impl Config {
     /// ```rust
     /// use const_base::{Config, encode};
     ///
-    /// assert_eq!(encode!(b"neat", Config::B32), b"NZSWC5A=");
+    /// assert_eq!(encode!(b"neat", Config::B32), "NZSWC5A=");
     /// ```
     ///
     pub const B32: Self = Self::new(Encoding::Base32(B32CharSet::Standard));
@@ -143,7 +143,7 @@ impl Config {
     /// ```rust
     /// use const_base::{Config, decode, encode};
     ///
-    /// assert_eq!(encode!(&[0xF1, 0x00, 0x0f], Config::HEX), b"F1000F");
+    /// assert_eq!(encode!(&[0xF1, 0x00, 0x0f], Config::HEX), "F1000F");
     ///
     /// // Hexademical decoding allows mixing uppercase and lowercase
     /// assert_eq!(decode!(b"beefBEEF", Config::HEX), &[0xBE, 0xEF, 0xBE, 0xEF]);
@@ -160,7 +160,7 @@ impl Config {
     /// ```rust
     /// use const_base::{Config, decode, encode};
     ///
-    /// assert_eq!(encode!(&[0xf1, 0x00, 0x0f], Config::HEX_LOWER), b"f1000f");
+    /// assert_eq!(encode!(&[0xf1, 0x00, 0x0f], Config::HEX_LOWER), "f1000f");
     ///
     /// // Hexademical decoding allows mixing uppercase and lowercase
     /// assert_eq!(decode!(b"beefBEEF", Config::HEX_LOWER), &[0xBE, 0xEF, 0xBE, 0xEF]);

@@ -1,4 +1,4 @@
-use crate::{encoding::INVALID_ENC, Config, DecodeError, HexCharSet, MismatchedOutputLength};
+use crate::{encoding::INVALID_ENC, ArrayStr, Config, DecodeError, HexCharSet, WrongLength};
 
 const UPPER_A_SUB_10: u8 = b'A' - 10;
 const LOWER_A_SUB_10: u8 = b'a' - 10;
@@ -21,11 +21,11 @@ pub(crate) const fn encode<const OUT: usize>(
     mut input: &[u8],
     config: Config,
     char_set: HexCharSet,
-) -> Result<[u8; OUT], MismatchedOutputLength> {
+) -> Result<ArrayStr<OUT>, WrongLength> {
     let output_len = encoded_len(input.len(), config);
 
     if OUT != output_len {
-        return Err(crate::MismatchedOutputLength {
+        return Err(crate::WrongLength {
             expected: OUT,
             found: output_len,
         });
@@ -46,7 +46,10 @@ pub(crate) const fn encode<const OUT: usize>(
         input = rem;
     }
 
-    Ok(out)
+    unsafe {
+        // SAFETY: out is only written bytes from `digit_to_hex`, which are all ascii.
+        Ok(ArrayStr::from_utf8_unchecked(out))
+    }
 }
 
 pub(crate) const fn decoded_len(input: &[u8], _config: Config) -> usize {
@@ -65,12 +68,10 @@ pub(crate) const fn decode<const OUT: usize>(
             enc: config.encoding,
         }));
     } else if output_len != OUT {
-        return Err(DecodeError::MismatchedOutputLength(
-            MismatchedOutputLength {
-                expected: OUT,
-                found: output_len,
-            },
-        ));
+        return Err(DecodeError::WrongLength(WrongLength {
+            expected: OUT,
+            found: output_len,
+        }));
     }
 
     let mut out = [0u8; OUT];

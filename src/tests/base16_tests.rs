@@ -25,13 +25,13 @@ fn test_encode_decode() {
                     let mut daten_encoded = [0u8; ENCODED_LEN];
                     daten_cfg.encode_mut(&input, &mut daten_encoded);
                     let encoded = cfg.encode::<ENCODED_LEN>(&input).unwrap();
-                    assert_eq!(daten_encoded, encoded);
+                    assert_eq!(&daten_encoded, encoded.as_array());
 
                     let mut daten_decoded = [0u8; $in_length];
                     daten_cfg
                         .decode_mut(&daten_encoded, &mut daten_decoded)
                         .unwrap();
-                    let decoded = cfg.decode::<$in_length>(&encoded).unwrap();
+                    let decoded = cfg.decode::<$in_length>(encoded.as_array()).unwrap();
                     assert_eq!(daten_decoded, decoded);
                 }
             }
@@ -52,7 +52,7 @@ fn test_encode_hex_errors() {
         let err = Config::HEX.encode::<3>(&[0xAB, 0xCD]).unwrap_err();
         assert!(err.expected() == 3 && err.found() == 4, "{:?}", err);
     }
-    assert_eq!(Config::HEX.encode::<4>(&[0xAB, 0xCD]).unwrap(), *b"ABCD");
+    assert_eq!(Config::HEX.encode::<4>(&[0xAB, 0xCD]).unwrap(), "ABCD");
     {
         let err = Config::HEX.encode::<5>(&[0xAB, 0xCD]).unwrap_err();
         assert!(err.expected() == 5 && err.found() == 4, "{:?}", err);
@@ -93,13 +93,13 @@ fn test_decode_hex_errors() {
         }
     }
 
-    // MismatchedOutputLength
+    // WrongLength
     {
         let err = Config::HEX.decode::<3>(b"00000000").unwrap_err();
         assert!(
             matches!(
                 &err,
-                DecodeError::MismatchedOutputLength(x)
+                DecodeError::WrongLength(x)
                 if x.expected() == 3 && x.found() == 4
             ),
             "{:?}",
@@ -114,7 +114,7 @@ fn test_decode_hex_errors() {
         assert!(
             matches!(
                 &err,
-                DecodeError::MismatchedOutputLength(x)
+                DecodeError::WrongLength(x)
                 if x.expected() == 5 && x.found() == 4
             ),
             "{:?}",
@@ -145,10 +145,6 @@ fn test_decode_hex_errors() {
         let slice = &array[..invalid_len];
 
         let err = Config::HEX.decode::<100>(slice).unwrap_err();
-        assert!(
-            matches!(&err, DecodeError::MismatchedOutputLength { .. }),
-            "{:?}",
-            err
-        );
+        assert!(matches!(&err, DecodeError::WrongLength { .. }), "{:?}", err);
     }
 }

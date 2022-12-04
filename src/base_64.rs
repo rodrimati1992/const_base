@@ -1,6 +1,6 @@
 use crate::{
     encode_decode_shared::{decoded_len_bases, encoded_len_bases},
-    B64CharSet, Config, DecodeError, Encoding, MismatchedOutputLength,
+    B64CharSet, Config, DecodeError, Encoding, WrongLength,
 };
 
 const MASK_6BITS: u8 = 0b111111;
@@ -16,7 +16,7 @@ pub(crate) const fn encode<const OUT: usize>(
     mut input: &[u8],
     config: Config,
     char_set: B64CharSet,
-) -> Result<[u8; OUT], MismatchedOutputLength> {
+) -> Result<crate::ArrayStr<OUT>, WrongLength> {
     crate::encode_decode_shared::encode_bases! {
         input, config, char_set,
         {

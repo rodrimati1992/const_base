@@ -38,10 +38,10 @@ fn test_encode_base32() {
                     let left_pad;
                     let left: &[_] = if pad {
                         left_pad = encode::<OUT_LEN_PAD>(&input, cfg).unwrap();
-                        &left_pad
+                        left_pad.as_array()
                     } else {
                         left_no_pad = encode::<OUT_LEN_NO_PAD>(&input, cfg).unwrap();
-                        &left_no_pad
+                        left_no_pad.as_array()
                     };
                     let right = &out_no_pad[..written];
 
@@ -84,7 +84,7 @@ fn test_encode_b32_errors() {
             let err = unpad_cfg.encode::<3>(&[0xAB, 0xCD]).unwrap_err();
             assert!(err.expected() == 3 && err.found() == 4, "{:?}", err);
         }
-        assert_eq!(unpad_cfg.encode::<4>(&[0xAB, 0xCD]).unwrap(), *b"VPGQ");
+        assert_eq!(unpad_cfg.encode::<4>(&[0xAB, 0xCD]).unwrap(), "VPGQ");
         {
             let err = unpad_cfg.encode::<5>(&[0xAB, 0xCD]).unwrap_err();
             assert!(err.expected() == 5 && err.found() == 4, "{:?}", err);
@@ -96,10 +96,7 @@ fn test_encode_b32_errors() {
         let err = Config::B32.encode::<7>(&[0xAB, 0xCD]).unwrap_err();
         assert!(err.expected() == 7 && err.found() == 8, "{:?}", err);
     }
-    assert_eq!(
-        Config::B32.encode::<8>(&[0xAB, 0xCD]).unwrap(),
-        *b"VPGQ===="
-    );
+    assert_eq!(Config::B32.encode::<8>(&[0xAB, 0xCD]).unwrap(), "VPGQ====");
     {
         let err = Config::B32.encode::<9>(&[0xAB, 0xCD]).unwrap_err();
         assert!(err.expected() == 9 && err.found() == 8, "{:?}", err);
@@ -231,37 +228,25 @@ fn test_decode_base32_errors() {
         assert!(matches!(err, DecodeError::InvalidByte { .. }), "{:?}", err);
     }
 
-    // MismatchedOutputLength
+    // WrongLength
     {
         let err = decode::<4>(b"AA\x00A", Config::B32).unwrap_err();
-        assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
-            "{:?}",
-            err
-        );
+        assert!(matches!(err, DecodeError::WrongLength { .. }), "{:?}", err);
     }
     {
         let err = decode::<3>(b"AAA\x00AAA", Config::B32).unwrap_err();
-        assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
-            "{:?}",
-            err
-        );
+        assert!(matches!(err, DecodeError::WrongLength { .. }), "{:?}", err);
     }
     {
         let err = decode::<6>(b"AAAAA\x00A", Config::B32).unwrap_err();
-        assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
-            "{:?}",
-            err
-        );
+        assert!(matches!(err, DecodeError::WrongLength { .. }), "{:?}", err);
     }
     {
         let err = decode::<5>(b"AAAAAAA\x00BB", Config::B32).unwrap_err();
         assert!(
             matches!(
                 &err,
-                DecodeError::MismatchedOutputLength(x)
+                DecodeError::WrongLength(x)
                 if x.expected() == 5 && x.found() == 6
             ),
             "{:?}",

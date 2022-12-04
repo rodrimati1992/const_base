@@ -15,19 +15,33 @@ pub enum DecodeError {
     /// passed to [`decode`] would produce.
     ///
     /// [`decode`]: crate::decode()
-    MismatchedOutputLength(MismatchedOutputLength),
+    WrongLength(WrongLength),
     /// When the slice passed to [`decode`] is not a valid length for that encoding.
     ///
     /// For base 64 that is when `input.len() % 4` equals `1`.
     InvalidInputLength(InvalidInputLength),
 }
 
+macro_rules! define_unwrap_self {
+    () => {
+        /// Unwraps a Result with this type as the error.
+        pub const fn unwrap<T: Copy>(res: Result<T, Self>) -> T {
+            match res {
+                Ok(x) => x,
+                Err(e) => e.panic(),
+            }
+        }
+    };
+}
+
 impl DecodeError {
+    define_unwrap_self! {}
+
     #[track_caller]
     pub const fn panic(&self) -> ! {
         match self {
             DecodeError::InvalidByte(x) => x.panic(),
-            DecodeError::MismatchedOutputLength(x) => x.panic(),
+            DecodeError::WrongLength(x) => x.panic(),
             DecodeError::InvalidInputLength(x) => x.panic(),
         }
     }
@@ -71,6 +85,8 @@ impl InvalidByte {
         self.encoding
     }
 
+    define_unwrap_self! {}
+
     #[track_caller]
     pub const fn panic(&self) -> ! {
         use const_panic::{FmtArg, PanicVal};
@@ -97,30 +113,33 @@ impl InvalidByte {
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{Config, DecodeError, MismatchedOutputLength, decode};
+/// use const_base::{Config, DecodeError, WrongLength, decode};
 ///
 /// const DECODED: Result<[u8; 8], DecodeError> = decode(b"AAAAAA", Config::B64);
 /// assert!(matches!(
 ///     DECODED,
-///     Err(DecodeError::MismatchedOutputLength(MismatchedOutputLength{..}))
+///     Err(DecodeError::WrongLength(WrongLength{..}))
 /// ));
 ///
 /// ```
 ///
 /// [`decode`]: crate::decode()
 #[derive(Debug, PartialEq)]
-pub struct MismatchedOutputLength {
+pub struct WrongLength {
     pub(crate) expected: usize,
     pub(crate) found: usize,
 }
 
-impl MismatchedOutputLength {
+impl WrongLength {
     pub const fn expected(&self) -> usize {
         self.expected
     }
     pub const fn found(&self) -> usize {
         self.found
     }
+
+    define_unwrap_self! {}
+
     #[track_caller]
     pub const fn panic(&self) -> ! {
         use const_panic::{FmtArg, PanicVal};
@@ -165,6 +184,8 @@ impl InvalidInputLength {
         self.length
     }
 
+    define_unwrap_self! {}
+
     #[track_caller]
     pub const fn panic(&self) -> ! {
         use const_panic::{FmtArg, PanicVal};
@@ -181,8 +202,8 @@ impl InvalidInputLength {
 #[doc(hidden)]
 #[track_caller]
 pub const fn __unwrap_encode<const N: usize>(
-    res: Result<[u8; N], MismatchedOutputLength>,
-) -> [u8; N] {
+    res: Result<crate::ArrayStr<N>, WrongLength>,
+) -> crate::ArrayStr<N> {
     match res {
         Ok(x) => x,
         Err(e) => e.panic(),

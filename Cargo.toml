@@ -3,7 +3,7 @@ name = "const_base"
 version = "0.2.0"
 authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
 edition = "2021"
-rust-version = "1.57.0"
+rust-version = "1.64.0"
 license = "Zlib"
 description = "Decoding/encoding base 64/32/16 strings at compile-time"
 documentation = "https://docs.rs/const_base/"
@@ -18,8 +18,12 @@ include = [
     "LICENSE-ZLIB.md", 
 ]
 
+[features]
+__test = []
+
 [dependencies.const_panic]
 version = "0.2.7"
+features = ["rust_1_64"]
 default_features = false
 
 [dev-dependencies.data-encoding]

@@ -12,7 +12,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        rust: [stable, beta, nightly, 1.57.0]
+        rust: [stable, beta, nightly, 1.64.0]
 
     steps:
     - uses: actions/checkout@v2
@@ -22,4 +22,4 @@ jobs:
         cargo update
           
         cd "${{github.workspace}}/"
-        cargo test
+        cargo test --features "__test" 

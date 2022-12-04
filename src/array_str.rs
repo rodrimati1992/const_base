@@ -57,6 +57,11 @@ mod arr {
             &self.arr
         }
 
+        /// Gets a slice of the wrapped byte array.
+        pub const fn as_slice(&self) -> &[u8] {
+            &self.arr
+        }
+
         /// Unwraps this into the wrapped byte array.
         pub const fn into_array(self) -> [u8; N] {
             self.arr
