@@ -69,6 +69,8 @@ mod codec_macros;
 #[macro_use]
 mod internal_macros;
 
+mod array_str;
+
 mod encoding;
 
 mod config;
@@ -97,6 +99,7 @@ pub mod errors;
 pub mod __priv_utils;
 
 pub use crate::{
+    array_str::ArrayStr,
     config::Config,
     encode_decode_shared::*,
     encoding::{B32CharSet, B64CharSet, Encoding, HexCharSet},
