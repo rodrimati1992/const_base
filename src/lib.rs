@@ -51,7 +51,7 @@
 //!
 //! # Minimum Supported Rust Version
 //!
-//! `const_base` requires Rust 1.51.0, because it uses const generics.
+//! `const_base` requires Rust 1.64.0.
 //!
 //!
 #![no_std]
