@@ -8,6 +8,8 @@ use rand::{Rng, SeedableRng};
 
 use data_encoding as base32;
 
+const GEN_ITERS: usize = if cfg!(miri) { 10 } else { 100 };
+
 #[test]
 fn test_encode_base32() {
     let mut rng = SmallRng::seed_from_u64(6249204433781597762);
@@ -23,7 +25,7 @@ fn test_encode_base32() {
             const OUT_LEN_NO_PAD: usize = encoded_len($in_length, Config::B32.end_padding(false));
 
             for &(ref b32_cfg, cfg, pad) in cfgs.iter() {
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; $in_length]>();
 
                     let written = if pad { OUT_LEN_PAD } else { OUT_LEN_NO_PAD };
@@ -120,7 +122,7 @@ fn test_decode_base32() {
             assert_eq!($unencoded_len, DECODED_LEN, "QUX");
 
             for &(ref b32_cfg, cfg, pad) in cfgs.iter() {
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; DECODED_LEN]>();
 
                     let written_enc = if pad {

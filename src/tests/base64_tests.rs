@@ -4,6 +4,8 @@ use crate::{B64CharSet, Config, DecodeError, Encoding};
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
+const GEN_ITERS: usize = if cfg!(miri) { 10 } else { 100 };
+
 #[test]
 fn test_encode_base64() {
     let mut rng = SmallRng::seed_from_u64(6249204433781597762);
@@ -30,7 +32,7 @@ fn test_encode_base64() {
                 b64_cfg = b64_cfg.pad(pad);
                 cfg = cfg.end_padding(pad);
 
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; $in_length]>();
 
                     let mut out_no_pad = [0u8; OUT_LEN_PAD];
@@ -106,7 +108,7 @@ fn test_decode_base64() {
                 b64_cfg = b64_cfg.pad(pad);
                 cfg = cfg.end_padding(pad);
 
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; DECODED_LEN]>();
 
                     let mut encoded_no_pad = [0u8; $encoded_length + 4];

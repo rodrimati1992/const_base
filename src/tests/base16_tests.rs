@@ -5,6 +5,8 @@ use rand::{Rng, SeedableRng};
 
 use data_encoding as hex;
 
+const GEN_ITERS: usize = if cfg!(miri) { 10 } else { 100 };
+
 #[test]
 fn test_encode_decode() {
     let mut rng = SmallRng::seed_from_u64(6249204433781597762);
@@ -19,7 +21,7 @@ fn test_encode_decode() {
             ];
 
             for (daten_cfg, cfg) in cfgs.iter() {
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; $in_length]>();
 
                     let mut daten_encoded = [0u8; ENCODED_LEN];
