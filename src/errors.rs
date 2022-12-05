@@ -106,7 +106,7 @@ impl InvalidByte {
         crate::utils::cpanic(&[
             PanicVal::write_str("invalid byte ("),
             PanicVal::from_u8(self.byte, FmtArg::DEBUG),
-            PanicVal::write_str(", the "),
+            PanicVal::write_str("_u8, the "),
             PanicVal::from_char(self.as_char, FmtArg::DEBUG),
             PanicVal::write_str(" character) for the "),
             PanicVal::write_str(self.encoding.full_name()),
@@ -284,6 +284,9 @@ impl ExcessBits {
         crate::utils::cpanic(&[
             PanicVal::write_str("excess bits in last byte: "),
             PanicVal::from_u8(self.last_byte, FmtArg::DEBUG),
+            PanicVal::write_str("_u8 (the "),
+            PanicVal::from_char(self.last_byte as char, FmtArg::DEBUG),
+            PanicVal::write_str(" character)"),
         ])
     }
 }

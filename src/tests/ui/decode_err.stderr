@@ -1,10 +1,10 @@
 error[E0080]: evaluation of constant value failed
  --> src/tests/ui/decode_err.rs:4:5
   |
-4 |     decode!(b"A===", Config::B64.end_padding(true));
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
+4 |     decode!(b"+/", Config::B64);
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
 
-invalid input length for base-64: 1
+excess bits in last byte: 47_u8 (the '/' character)
 
 ', $DIR/src/tests/ui/decode_err.rs:4:5
   |
@@ -13,10 +13,10 @@ invalid input length for base-64: 1
 error[E0080]: evaluation of constant value failed
  --> src/tests/ui/decode_err.rs:5:5
   |
-5 |     decode!(b"AAAAA", Config::B64);
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
+5 |     decode!(b"A===", Config::B64.end_padding(true));
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
 
-invalid input length for base-64: 5
+invalid input length for base-64: 1
 
 ', $DIR/src/tests/ui/decode_err.rs:5:5
   |
@@ -25,11 +25,23 @@ invalid input length for base-64: 5
 error[E0080]: evaluation of constant value failed
  --> src/tests/ui/decode_err.rs:6:5
   |
-6 |     decode!(b"AAA\x00AA", Config::B64);
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
+6 |     decode!(b"AAAAA", Config::B64);
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
 
-invalid byte (0, the '\x00' character) for the base-64(standard) encoding at offset 3
+invalid input length for base-64: 5
 
 ', $DIR/src/tests/ui/decode_err.rs:6:5
+  |
+  = note: this error originates in the macro `decode` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0080]: evaluation of constant value failed
+ --> src/tests/ui/decode_err.rs:7:5
+  |
+7 |     decode!(b"AAA\x00AA", Config::B64);
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
+
+invalid byte (0_u8, the '\x00' character) for the base-64(standard) encoding at offset 3
+
+', $DIR/src/tests/ui/decode_err.rs:7:5
   |
   = note: this error originates in the macro `decode` (in Nightly builds, run with -Z macro-backtrace for more info)
