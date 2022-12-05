@@ -1,6 +1,6 @@
 use crate::{
     encode_decode_shared::{decoded_len_bases, encoded_len_bases},
-    B32CharSet, Config, DecodeError, Encoding, MismatchedOutputLength,
+    B32CharSet, Config, DecodeError, Encoding, WrongOutputLength,
 };
 
 const MASK_5BITS: u8 = 0b11111;
@@ -39,7 +39,7 @@ pub(crate) const fn encode<const OUT: usize>(
     mut input: &[u8],
     config: Config,
     char_set: B32CharSet,
-) -> Result<[u8; OUT], MismatchedOutputLength> {
+) -> Result<crate::ArrayStr<OUT>, WrongOutputLength> {
     crate::encode_decode_shared::encode_bases! {
         input, config, char_set,
         {
@@ -133,7 +133,7 @@ pub(crate) const fn decode<const OUT: usize>(
                 in_i += 4;
             }
 
-            match *input {
+            let res_excess_bits = match *input {
                 [oa, ob, oc, od, oe, of, og] => {
                     from_encoded! {a = oa, b = ob, c = oc, d = od, e = oe, f = of, g = og}
 
@@ -145,6 +145,12 @@ pub(crate) const fn decode<const OUT: usize>(
                     write_out!((buffer >> 16) as u8);
                     write_out!((buffer >> 8) as u8);
                     write_out!(buffer as u8);
+
+                    crate::encoding::CheckExcessBits {
+                        last_byte: og,
+                        decoded_byte: g,
+                        excess_bits: 3,
+                    }.call()
                 }
                 [oa, ob, oc, od, oe] => {
                     from_encoded! {a = oa, b = ob, c = oc, d = od, e = oe}
@@ -154,6 +160,12 @@ pub(crate) const fn decode<const OUT: usize>(
                     write_out!((buffer >> 16) as u8);
                     write_out!((buffer >> 8) as u8);
                     write_out!(buffer as u8);
+
+                    crate::encoding::CheckExcessBits {
+                        last_byte: oe,
+                        decoded_byte: e,
+                        excess_bits: 1,
+                    }.call()
                 }
                 [oa, ob, oc, od] => {
                     from_encoded! {a = oa, b = ob, c = oc, d = od}
@@ -162,6 +174,12 @@ pub(crate) const fn decode<const OUT: usize>(
 
                     write_out!((buffer >> 8) as u8);
                     write_out!(buffer as u8);
+
+                    crate::encoding::CheckExcessBits {
+                        last_byte: od,
+                        decoded_byte: d,
+                        excess_bits: 4,
+                    }.call()
                 }
                 [oa, ob] => {
                     from_encoded! {a = oa, b = ob}
@@ -169,9 +187,21 @@ pub(crate) const fn decode<const OUT: usize>(
                     let buffer = cast_shl!(a << 3) | cast_shr!(b >> 2);
 
                     write_out!(buffer as u8);
+
+                    crate::encoding::CheckExcessBits {
+                        last_byte: ob,
+                        decoded_byte: b,
+                        excess_bits: 2,
+                    }.call()
                 }
-                _ => {}
+                [] => Ok(()),
+                _ => panic!("BUG: `input` can't be an invalid length here."),
+            };
+
+            if let Err(e) = res_excess_bits {
+                return Err(e);
             }
+
         }
     }
 }

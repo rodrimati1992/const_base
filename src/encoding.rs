@@ -1,3 +1,5 @@
+use crate::DecodeError;
+
 /// Determines which encoding is used.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -63,6 +65,25 @@ pub enum B32CharSet {
     /// ABCDEFGHIJKLMNOPQRSTUVWXYZ234567
     /// ```
     Standard,
+}
+
+impl Encoding {
+    pub(crate) const fn name(self) -> &'static str {
+        match self {
+            Encoding::Base64 { .. } => "base-64",
+            Encoding::Base32 { .. } => "base-32",
+            Encoding::Hex { .. } => "hexadecimal",
+        }
+    }
+    pub(crate) const fn full_name(self) -> &'static str {
+        match self {
+            Encoding::Base64(B64CharSet::Standard) => "base-64(standard)",
+            Encoding::Base64(B64CharSet::UrlSafe) => "base-64(url-safe)",
+            Encoding::Base32(B32CharSet::Standard) => "base-32",
+            Encoding::Hex(HexCharSet::Uppercase) => "hexadecimal(uppercase)",
+            Encoding::Hex(HexCharSet::Lowercase) => "hexadecimal(lowercase)",
+        }
+    }
 }
 
 pub(crate) struct CharSetLookup<const CHARS: usize> {
@@ -149,5 +170,31 @@ impl<const N: usize> CharSetLookup<N> {
         }
 
         Self { from_enc, into_enc }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Helper struct for checking that the last byte in base64/32
+// doesn't contain set bits in the `excess_bits` lower bits.
+pub(crate) struct CheckExcessBits {
+    pub(crate) last_byte: u8,
+    pub(crate) decoded_byte: u8,
+    pub(crate) excess_bits: u8,
+}
+
+impl CheckExcessBits {
+    pub(crate) const fn call(self) -> Result<(), DecodeError> {
+        let Self {
+            last_byte,
+            decoded_byte,
+            excess_bits,
+        } = self;
+
+        if ((decoded_byte >> excess_bits) << excess_bits) == decoded_byte {
+            Ok(())
+        } else {
+            Err(DecodeError::ExcessBits(crate::ExcessBits { last_byte }))
+        }
     }
 }

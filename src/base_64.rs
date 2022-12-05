@@ -1,6 +1,6 @@
 use crate::{
     encode_decode_shared::{decoded_len_bases, encoded_len_bases},
-    B64CharSet, Config, DecodeError, Encoding, MismatchedOutputLength,
+    B64CharSet, Config, DecodeError, Encoding, WrongOutputLength,
 };
 
 const MASK_6BITS: u8 = 0b111111;
@@ -16,7 +16,7 @@ pub(crate) const fn encode<const OUT: usize>(
     mut input: &[u8],
     config: Config,
     char_set: B64CharSet,
-) -> Result<[u8; OUT], MismatchedOutputLength> {
+) -> Result<crate::ArrayStr<OUT>, WrongOutputLength> {
     crate::encode_decode_shared::encode_bases! {
         input, config, char_set,
         {
@@ -69,18 +69,34 @@ pub(crate) const fn decode<const OUT: usize>(
                 in_i += 4;
             }
 
-            match *input {
+            let excess_bits_res = match *input {
                 [oa, ob, oc] => {
                     from_encoded! {a = oa, b = ob, c = oc}
                     write_out!(a << 2 | (b >> 4));
                     write_out!((b << 4) | (c >> 2));
+
+                    crate::encoding::CheckExcessBits {
+                        last_byte: oc,
+                        decoded_byte: c,
+                        excess_bits: 2,
+                    }.call()
                 }
                 [oa, ob] => {
                     from_encoded! {a = oa, b = ob}
                     write_out!(a << 2 | (b >> 4));
+
+                    crate::encoding::CheckExcessBits {
+                        last_byte: ob,
+                        decoded_byte: b,
+                        excess_bits: 4,
+                    }.call()
                 }
-                [_] => [/* unreachable */][input.len()],
-                _ => {}
+                [] => Ok(()),
+                _ => panic!("BUG: `input` can't be an invalid length here"),
+            };
+
+            if let Err(e) = excess_bits_res {
+                return Err(e);
             }
         }
     }

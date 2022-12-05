@@ -1,5 +1,35 @@
 This changelog is a summary of the changes made in each release.
 
+# 0.2.0
+
+### 0.2.0
+
+Added `ArrayStr` struct.
+
+Changed `encode` function and macro to return `ArrayStr` instead of byte array.
+
+Renamed `InvalidInputLength` variant and struct to `WrongInputLength`
+
+Renamed `MismatchedOutputLength` variant and struct to `WrongOutputLength`
+
+Added `unwrap` associated function to all error types.
+
+Swapped `expected` and `found` values for `WrongOutputLength`
+
+Added `ExcessBits` error struct and as a variant of `DecodeError`.
+
+Fixed excess bits detection to base-64 and base-32, it previously just ignored those bits,
+
+Removed `unwrap_or` macro.
+
+Bumped Minimum Supported Rust Version to 1.64.0.
+
+Bumped edition to 2021.
+
+Added `const_panic = "0.2"` dependency, to improve compile-time errors
+
+
+
 # 0.1
 
 ### 0.1.2

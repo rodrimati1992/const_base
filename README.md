@@ -10,20 +10,20 @@ For decoding/encoding base 64/32/16 strings at compile-time.
 ### Encoding
 
 ```rust
-use const_base::{encode, encode_as_str, Config};
+use const_base::{encode_as_str, Config};
 
 {
     // the encoding macros can take both `&str` and `&[u8]` constants.
-    const OUTA: &[u8; 4] = encode!("foo", Config::B64);
-    const OUTB: &[u8; 4] = encode!(b"foo", Config::B64);
+    const OUTA: &str = encode_as_str!("foo", Config::B64);
+    const OUTB: &str = encode_as_str!(b"foo", Config::B64);
     
-    assert_eq!(OUTA, b"Zm9v");
-    assert_eq!(OUTB, b"Zm9v");
+    assert_eq!(OUTA, "Zm9v");
+    assert_eq!(OUTB, "Zm9v");
 }
 {
     const BYTES: &[u8] = b"hello";
 
-    // the encoding macros can encode non-literal constants
+    // the encoding macros can encode_as_str non-literal constants
     const OUT: &str = encode_as_str!(BYTES, Config::B64_URL_SAFE);
     
     assert_eq!(OUT, "aGVsbG8=");
@@ -56,5 +56,4 @@ use const_base::{decode, Config};
 
 # Minimum Supported Rust Version
 
-`const_base` requires Rust 1.51.0, because it uses const generics.
-
+`const_base` requires Rust 1.64.0.

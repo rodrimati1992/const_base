@@ -68,20 +68,19 @@
 /// ```
 /// produce compile-time errors that look like this:
 /// ```text
-/// error[E0308]: mismatched types
-///  --> src/codec_macros.rs:39:1
+/// error[E0080]: evaluation of constant value failed
+///  --> src/codec_macros.rs:67:1
 ///   |
 /// 5 | decode!("A", Config::B64);
-///   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `IsOk`, found struct `const_base::msg::InvalidInputLength`
-///   |
-///   = note: expected struct `IsOk`
-///              found struct `const_base::msg::InvalidInputLength<length<1_usize>>`
-///   = note: this error originates in the macro `$crate::__result_tuple_to_singleton` (in Nightly builds, run with -Z macro-backtrace for more info)
+///   | ^^^^^^^^^^^^^^^^^^^^^^^^^ the evaluated program panicked at '
+///
+/// invalid input length for base-64: 1
+///
+/// ', src/codec_macros.rs:5:1
 ///
 /// ```
-/// This macro emulates panics using type errors like those.
 ///
-/// In this case, the error is `InvalidInputLength`,
+/// In this case, the error is [`WrongInputLength`](crate::DecodeError::WrongInputLength),
 /// because the input string can't be `4 * n + 1` bytes long (`n` can be any positive integer).
 ///
 ///
@@ -92,42 +91,46 @@ macro_rules! decode {
         const __P_NHPMWYD3NJA: $crate::__::CodecArgs =
             $crate::__::DecodeArgsFrom($slice, $config).conv();
         {
-            const OUT: &$crate::__AdjacentResult<
-                [$crate::__::u8; __P_NHPMWYD3NJA.out_len],
-                $crate::DecodeError,
-            > = &$crate::__priv_decode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg);
+            const RES: &$crate::__DecodeResult<{ __P_NHPMWYD3NJA.out_len }> =
+                &$crate::__priv_decode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg);
 
-            const _: $crate::msg::IsOk =
-                $crate::__result_tuple_to_singleton!($crate::msg::__decode_res_to_tuple(&OUT.err));
+            const _: () = RES.assert_ok();
 
-            &OUT.ok
+            &RES.array
         }
     }};
 }
 
-/// Encodes the `$slice` constant into a `&[u8; N]` with the encoding determined by [`$config`].
+/// Encodes the `$slice` constant into a [`&'static ArrayStr<LEN>`](crate::ArrayStr),
+/// with the encoding determined by [`$config`].
 ///
-/// `$slice` slice can be a `&'static str`, `&'static [u8; N]`, or `&'static [u8]`.
+/// `$slice` can be a `&'static str`, `&'static [u8; N]`, or `&'static [u8]`.
+///
+/// There's also the [`encode_as_str`](crate::encode_as_str)
+/// macro for getting a `&'static str`.
+/// `encode_as_str` is just an alias for `encode!(...).as_str()`.
 ///
 /// # Examples
 ///
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{encode, Config};
+/// use const_base::{encode, ArrayStr, Config};
 ///
 /// {
-///     const OUT: &[u8; 4] = encode!("bar", Config::B64);
+///     const OUT: &ArrayStr<4> = encode!("bar", Config::B64);
 ///     
-///     assert_eq!(OUT, b"YmFy");
+///     assert_eq!(OUT, "YmFy");
 /// }
 /// {
 ///     const BYTES: &[u8] = b"world";
 ///
 ///     // this macro can encode non-literal constants
-///     const OUT: &[u8] = encode!(BYTES, Config::B64_URL_SAFE);
+///     const OUT: &[u8; 8] = encode!(BYTES, Config::B64_URL_SAFE).as_array();
+///     const OUT_STR: &str = encode!(BYTES, Config::B64_URL_SAFE).as_str();
 ///     
 ///     assert_eq!(OUT, b"d29ybGQ=");
+///     assert_eq!(OUT_STR, "d29ybGQ=");
 /// }
 /// ```
 ///
@@ -136,9 +139,9 @@ macro_rules! decode {
 /// ```rust
 /// use const_base::{encode, Config};
 ///
-/// const OUT: &[u8] = encode!(&[3, 5, 8], Config::B32);
+/// const OUT: &str = encode!(&[3, 5, 8], Config::B32).as_str();
 ///     
-/// assert_eq!(OUT, b"AMCQQ===");
+/// assert_eq!(OUT, "AMCQQ===");
 /// ```
 ///
 /// ### Base 32
@@ -146,9 +149,9 @@ macro_rules! decode {
 /// ```rust
 /// use const_base::{encode, Config};
 ///
-/// const OUT: &[u8] = encode!(&[3, 5, 8], Config::B32);
+/// const OUT: &str = encode!(&[3, 5, 8], Config::B32).as_str();
 ///     
-/// assert_eq!(OUT, b"AMCQQ===");
+/// assert_eq!(OUT, "AMCQQ===");
 /// ```
 ///
 /// ### Hexadecimal
@@ -156,14 +159,12 @@ macro_rules! decode {
 /// ```rust
 /// use const_base::{encode, Config};
 ///
-/// const LOWER: &[u8] = encode!(&[0xB0, 0x01], Config::HEX_LOWER);
-/// const UPPER: &[u8] = encode!(&[0xB0, 0x01], Config::HEX);
+/// const LOWER: &str = encode!(&[0xB0, 0x01], Config::HEX_LOWER).as_str();
+/// const UPPER: &str = encode!(&[0xB0, 0x01], Config::HEX).as_str();
 ///     
-/// assert_eq!(LOWER, b"b001");
-/// assert_eq!(UPPER, b"B001");
+/// assert_eq!(LOWER, "b001");
+/// assert_eq!(UPPER, "B001");
 /// ```
-///
-///
 ///
 /// [`$config`]: crate::Config
 #[macro_export]
@@ -173,15 +174,16 @@ macro_rules! encode {
             $crate::__::EncodeArgsFrom($slice, $config).conv();
 
         {
-            const OUT: &[$crate::__::u8; __P_NHPMWYD3NJA.out_len] =
-                &$crate::__priv_encode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg).ok;
+            const OUT: &$crate::ArrayStr<{ __P_NHPMWYD3NJA.out_len }> =
+                &$crate::__priv_encode(__P_NHPMWYD3NJA.input, __P_NHPMWYD3NJA.cfg);
 
             OUT
         }
     }};
 }
 
-/// Encodes the `$slice` constant into a `&str` with the encoding determined by [`$config`].
+/// Encodes the `$slice` constant into a `&'static str`,
+/// with the encoding determined by [`$config`].
 ///
 /// `$slice` can be a `&'static str`, `&'static [u8; N]`, or `&'static [u8]`.
 ///
@@ -200,8 +202,7 @@ macro_rules! encode {
 /// {
 ///     const BYTES: &[u8] = b"goodbye";
 ///
-///     // this macro can encode non-literal constants
-///     const OUT: &str = encode_as_str!(BYTES, Config::B64_URL_SAFE);
+///     const OUT: &str =  encode_as_str!(BYTES, Config::B64_URL_SAFE);
 ///     
 ///     assert_eq!(OUT, "Z29vZGJ5ZQ==");
 /// }
@@ -222,35 +223,19 @@ macro_rules! encode {
 /// ```rust
 /// use const_base::{encode_as_str, Config};
 ///
-/// const LOWER: &str = encode_as_str!(&[0xB1, 0x00, 0x0d], Config::HEX_LOWER);
 /// const UPPER: &str = encode_as_str!(&[0xB1, 0x00, 0x0d], Config::HEX);
+/// const LOWER: &str = encode_as_str!(&[0xB1, 0x00, 0x0d], Config::HEX_LOWER);
 ///     
-/// assert_eq!(LOWER, "b1000d");
 /// assert_eq!(UPPER, "B1000D");
+/// assert_eq!(LOWER, "b1000d");
 /// ```
-///
 ///
 /// [`$config`]: crate::Config
 #[macro_export]
 macro_rules! encode_as_str {
     ($slice:expr, $config:expr $(,)*) => {{
-        const OUT_NHPMWYD3NJA: &$crate::__::str =
-            unsafe { $crate::__priv_transmute_bytes_to_str!($crate::encode!($slice, $config)) };
-        OUT_NHPMWYD3NJA
-    }};
-}
+        const OUT_NHPMWYD3NJA: &$crate::__::str = $crate::encode!($slice, $config).as_str();
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __priv_transmute_bytes_to_str {
-    ($bytes:expr) => {{
-        let bytes: &'static [$crate::__::u8] = $bytes;
-        let string: &'static $crate::__::str = {
-            $crate::__priv_utils::PtrToRef {
-                ptr: bytes as *const [$crate::__::u8] as *const $crate::__::str,
-            }
-            .reff
-        };
-        string
+        OUT_NHPMWYD3NJA
     }};
 }

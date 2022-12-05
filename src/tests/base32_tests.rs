@@ -8,6 +8,8 @@ use rand::{Rng, SeedableRng};
 
 use data_encoding as base32;
 
+const GEN_ITERS: usize = if cfg!(miri) { 10 } else { 100 };
+
 #[test]
 fn test_encode_base32() {
     let mut rng = SmallRng::seed_from_u64(6249204433781597762);
@@ -23,7 +25,7 @@ fn test_encode_base32() {
             const OUT_LEN_NO_PAD: usize = encoded_len($in_length, Config::B32.end_padding(false));
 
             for &(ref b32_cfg, cfg, pad) in cfgs.iter() {
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; $in_length]>();
 
                     let written = if pad { OUT_LEN_PAD } else { OUT_LEN_NO_PAD };
@@ -38,10 +40,10 @@ fn test_encode_base32() {
                     let left_pad;
                     let left: &[_] = if pad {
                         left_pad = encode::<OUT_LEN_PAD>(&input, cfg).unwrap();
-                        &left_pad
+                        left_pad.as_array()
                     } else {
                         left_no_pad = encode::<OUT_LEN_NO_PAD>(&input, cfg).unwrap();
-                        &left_no_pad
+                        left_no_pad.as_array()
                     };
                     let right = &out_no_pad[..written];
 
@@ -84,7 +86,7 @@ fn test_encode_b32_errors() {
             let err = unpad_cfg.encode::<3>(&[0xAB, 0xCD]).unwrap_err();
             assert!(err.expected() == 3 && err.found() == 4, "{:?}", err);
         }
-        assert_eq!(unpad_cfg.encode::<4>(&[0xAB, 0xCD]).unwrap(), *b"VPGQ");
+        assert_eq!(unpad_cfg.encode::<4>(&[0xAB, 0xCD]).unwrap(), "VPGQ");
         {
             let err = unpad_cfg.encode::<5>(&[0xAB, 0xCD]).unwrap_err();
             assert!(err.expected() == 5 && err.found() == 4, "{:?}", err);
@@ -96,10 +98,7 @@ fn test_encode_b32_errors() {
         let err = Config::B32.encode::<7>(&[0xAB, 0xCD]).unwrap_err();
         assert!(err.expected() == 7 && err.found() == 8, "{:?}", err);
     }
-    assert_eq!(
-        Config::B32.encode::<8>(&[0xAB, 0xCD]).unwrap(),
-        *b"VPGQ===="
-    );
+    assert_eq!(Config::B32.encode::<8>(&[0xAB, 0xCD]).unwrap(), "VPGQ====");
     {
         let err = Config::B32.encode::<9>(&[0xAB, 0xCD]).unwrap_err();
         assert!(err.expected() == 9 && err.found() == 8, "{:?}", err);
@@ -123,7 +122,7 @@ fn test_decode_base32() {
             assert_eq!($unencoded_len, DECODED_LEN, "QUX");
 
             for &(ref b32_cfg, cfg, pad) in cfgs.iter() {
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; DECODED_LEN]>();
 
                     let written_enc = if pad {
@@ -171,6 +170,96 @@ fn test_decode_base32() {
 }
 
 #[test]
+fn test_decode_base32_trailing_bits_err() {
+    {
+        for (input, output) in [
+            (b"7A", [248u8]),
+            (b"7E", [249u8]),
+            (b"7I", [250u8]),
+            (b"7M", [251u8]),
+            (b"7Q", [252u8]),
+            (b"7U", [253u8]),
+            (b"7Y", [254u8]),
+            (b"74", [255u8]),
+        ] {
+            assert_eq!(decode::<1>(input, Config::B32).unwrap(), output);
+        }
+
+        match decode::<1>(b"67", Config::B32) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'7');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+    {
+        assert_eq!(decode::<2>(b"777A", Config::B32).unwrap(), [255u8, 254]);
+        assert_eq!(decode::<2>(b"777Q", Config::B32).unwrap(), [255u8, 255]);
+
+        match decode::<2>(b"6667", Config::B32) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'7');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+    {
+        for (input, output) in [
+            (b"7777A", [255u8, 255, 240]),
+            (b"7777C", [255u8, 255, 241]),
+            (b"7777E", [255u8, 255, 242]),
+            (b"7777G", [255u8, 255, 243]),
+            (b"7777I", [255u8, 255, 244]),
+            (b"7777K", [255u8, 255, 245]),
+            (b"7777M", [255u8, 255, 246]),
+            (b"7777O", [255u8, 255, 247]),
+            (b"7777Q", [255u8, 255, 248]),
+            (b"7777S", [255u8, 255, 249]),
+            (b"7777U", [255u8, 255, 250]),
+            (b"7777W", [255u8, 255, 251]),
+            (b"7777Y", [255u8, 255, 252]),
+            (b"77772", [255u8, 255, 253]),
+            (b"77774", [255u8, 255, 254]),
+            (b"77776", [255u8, 255, 255]),
+        ] {
+            assert_eq!(decode::<3>(input, Config::B32).unwrap(), output);
+        }
+
+        match decode::<3>(b"66667", Config::B32) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'7');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+    {
+        assert_eq!(
+            decode::<4>(b"777777A", Config::B32).unwrap(),
+            [255u8, 255, 255, 252]
+        );
+        assert_eq!(
+            decode::<4>(b"777777I", Config::B32).unwrap(),
+            [255u8, 255, 255, 253]
+        );
+        assert_eq!(
+            decode::<4>(b"777777Q", Config::B32).unwrap(),
+            [255u8, 255, 255, 254]
+        );
+        assert_eq!(
+            decode::<4>(b"777777Y", Config::B32).unwrap(),
+            [255u8, 255, 255, 255]
+        );
+
+        match decode::<4>(b"6666667", Config::B32) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'7');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+}
+
+#[test]
 fn test_decode_base32_errors() {
     {
         // intentionally padded to this length
@@ -187,7 +276,7 @@ fn test_decode_base32_errors() {
     }
     {
         let ok = decode::<0>(b"", Config::B32.end_padding(true)).unwrap();
-        assert_eq!(ok, []);
+        assert_eq!(ok, [0u8; 0]);
     }
 
     let mut invalid_bytes = crate::test_utils::ByteSet([true; 256]);
@@ -231,11 +320,11 @@ fn test_decode_base32_errors() {
         assert!(matches!(err, DecodeError::InvalidByte { .. }), "{:?}", err);
     }
 
-    // MismatchedOutputLength
+    // WrongOutputLength
     {
         let err = decode::<4>(b"AA\x00A", Config::B32).unwrap_err();
         assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
+            matches!(err, DecodeError::WrongOutputLength { .. }),
             "{:?}",
             err
         );
@@ -243,7 +332,7 @@ fn test_decode_base32_errors() {
     {
         let err = decode::<3>(b"AAA\x00AAA", Config::B32).unwrap_err();
         assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
+            matches!(err, DecodeError::WrongOutputLength { .. }),
             "{:?}",
             err
         );
@@ -251,7 +340,7 @@ fn test_decode_base32_errors() {
     {
         let err = decode::<6>(b"AAAAA\x00A", Config::B32).unwrap_err();
         assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
+            matches!(err, DecodeError::WrongOutputLength { .. }),
             "{:?}",
             err
         );
@@ -261,15 +350,15 @@ fn test_decode_base32_errors() {
         assert!(
             matches!(
                 &err,
-                DecodeError::MismatchedOutputLength(x)
-                if x.expected() == 5 && x.found() == 6
+                DecodeError::WrongOutputLength(x)
+                if x.expected() == 6 && x.found() == 5
             ),
             "{:?}",
             err
         );
     }
 
-    // InvalidInputLength
+    // WrongInputLength
     for invalid_len in [1, 3, 6, 9, 11].iter().copied() {
         let mut array = [0u8; 16];
 
@@ -280,7 +369,7 @@ fn test_decode_base32_errors() {
 
         let err = decode::<100>(slice, Config::B32.end_padding(true)).unwrap_err();
         assert!(
-            matches!(&err, DecodeError::InvalidInputLength(x) if x.length() == invalid_len),
+            matches!(&err, DecodeError::WrongInputLength(x) if x.length() == invalid_len),
             "{:?}",
             err
         );

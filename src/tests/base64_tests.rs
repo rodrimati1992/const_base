@@ -4,6 +4,8 @@ use crate::{B64CharSet, Config, DecodeError, Encoding};
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
+const GEN_ITERS: usize = if cfg!(miri) { 10 } else { 100 };
+
 #[test]
 fn test_encode_base64() {
     let mut rng = SmallRng::seed_from_u64(6249204433781597762);
@@ -30,7 +32,7 @@ fn test_encode_base64() {
                 b64_cfg = b64_cfg.pad(pad);
                 cfg = cfg.end_padding(pad);
 
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; $in_length]>();
 
                     let mut out_no_pad = [0u8; OUT_LEN_PAD];
@@ -45,10 +47,10 @@ fn test_encode_base64() {
                     let left_pad;
                     let left: &[_] = if pad {
                         left_pad = encode::<OUT_LEN_PAD>(&input, cfg).unwrap();
-                        &left_pad
+                        left_pad.as_array()
                     } else {
                         left_no_pad = encode::<OUT_LEN_NO_PAD>(&input, cfg).unwrap();
-                        &left_no_pad
+                        left_no_pad.as_array()
                     };
                     let right = &out_no_pad[..written];
 
@@ -106,7 +108,7 @@ fn test_decode_base64() {
                 b64_cfg = b64_cfg.pad(pad);
                 cfg = cfg.end_padding(pad);
 
-                for _ in 0..100 {
+                for _ in 0..GEN_ITERS {
                     let input = rng.gen::<[u8; DECODED_LEN]>();
 
                     let mut encoded_no_pad = [0u8; $encoded_length + 4];
@@ -166,7 +168,7 @@ fn test_encode_b64_errors() {
             let err = unpad_cfg.encode::<2>(&[0xAB, 0xCD]).unwrap_err();
             assert!(err.expected() == 2 && err.found() == 3, "{:?}", err);
         }
-        assert_eq!(unpad_cfg.encode::<3>(&[0xAB, 0xCD]).unwrap(), *b"q80");
+        assert_eq!(unpad_cfg.encode::<3>(&[0xAB, 0xCD]).unwrap(), "q80");
         {
             let err = unpad_cfg.encode::<4>(&[0xAB, 0xCD]).unwrap_err();
             assert!(err.expected() == 4 && err.found() == 3, "{:?}", err);
@@ -178,10 +180,83 @@ fn test_encode_b64_errors() {
         let err = Config::B64.encode::<3>(&[0xAB, 0xCD]).unwrap_err();
         assert!(err.expected() == 3 && err.found() == 4, "{:?}", err);
     }
-    assert_eq!(Config::B64.encode::<4>(&[0xAB, 0xCD]).unwrap(), *b"q80=");
+    assert_eq!(Config::B64.encode::<4>(&[0xAB, 0xCD]).unwrap(), "q80=");
     {
         let err = Config::B64.encode::<5>(&[0xAB, 0xCD]).unwrap_err();
         assert!(err.expected() == 5 && err.found() == 4, "{:?}", err);
+    }
+}
+
+#[test]
+fn test_decode_base64_trailing_bits_err() {
+    {
+        assert_eq!(decode::<1>(b"+A", Config::B64).unwrap(), [248u8]);
+        assert_eq!(decode::<1>(b"+Q", Config::B64).unwrap(), [249u8]);
+        assert_eq!(decode::<1>(b"+g", Config::B64).unwrap(), [250u8]);
+        assert_eq!(decode::<1>(b"+w", Config::B64).unwrap(), [251u8]);
+
+        match decode::<1>(b"+/", Config::B64) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'/');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+    {
+        for (input, output) in [
+            (b"++A", [251u8, 224]),
+            (b"++E", [251u8, 225]),
+            (b"++I", [251u8, 226]),
+            (b"++M", [251u8, 227]),
+            (b"++Q", [251u8, 228]),
+            (b"++U", [251u8, 229]),
+            (b"++Y", [251u8, 230]),
+            (b"++c", [251u8, 231]),
+            (b"++g", [251u8, 232]),
+            (b"++k", [251u8, 233]),
+            (b"++o", [251u8, 234]),
+            (b"++s", [251u8, 235]),
+            (b"++w", [251u8, 236]),
+            (b"++0", [251u8, 237]),
+            (b"++4", [251u8, 238]),
+            (b"++8", [251u8, 239]),
+        ] {
+            assert_eq!(decode::<2>(input, Config::B64).unwrap(), output);
+        }
+
+        for input in [b"++/", b"++B"] {
+            match decode::<2>(input, Config::B64) {
+                Err(DecodeError::ExcessBits(err)) => {
+                    assert_eq!(err.last_byte(), *input.last().unwrap());
+                }
+                x => panic!("{x:?}"),
+            }
+        }
+    }
+    {
+        assert_eq!(
+            decode::<4>(b"+++++A", Config::B64).unwrap(),
+            [251u8, 239, 190, 248]
+        );
+        assert_eq!(
+            decode::<4>(b"+++++Q", Config::B64).unwrap(),
+            [251u8, 239, 190, 249]
+        );
+        assert_eq!(
+            decode::<4>(b"+++++g", Config::B64).unwrap(),
+            [251u8, 239, 190, 250]
+        );
+        assert_eq!(
+            decode::<4>(b"+++++w", Config::B64).unwrap(),
+            [251u8, 239, 190, 251]
+        );
+
+        match decode::<4>(b"+++++/", Config::B64) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'/');
+            }
+            x => panic!("{x:?}"),
+        }
     }
 }
 
@@ -280,11 +355,11 @@ fn test_decode_base64_errors() {
         assert!(matches!(err, DecodeError::InvalidByte { .. }), "{:?}", err);
     }
 
-    // MismatchedOutputLength
+    // WrongOutputLength
     {
         let err = decode::<4>(b"AA\x00A", Config::B64).unwrap_err();
         assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
+            matches!(err, DecodeError::WrongOutputLength { .. }),
             "{:?}",
             err
         );
@@ -292,7 +367,7 @@ fn test_decode_base64_errors() {
     {
         let err = decode::<3>(b"AAA\x00AA", Config::B64).unwrap_err();
         assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
+            matches!(err, DecodeError::WrongOutputLength { .. }),
             "{:?}",
             err
         );
@@ -300,7 +375,7 @@ fn test_decode_base64_errors() {
     {
         let err = decode::<6>(b"AAAAA\x00A", Config::B64).unwrap_err();
         assert!(
-            matches!(err, DecodeError::MismatchedOutputLength { .. }),
+            matches!(err, DecodeError::WrongOutputLength { .. }),
             "{:?}",
             err
         );
@@ -310,19 +385,19 @@ fn test_decode_base64_errors() {
         assert!(
             matches!(
                 &err,
-                DecodeError::MismatchedOutputLength(x)
-                if x.expected() == 5 && x.found() == 6
+                DecodeError::WrongOutputLength(x)
+                if x.found() == 5 && x.expected() == 6
             ),
             "{:?}",
             err
         );
     }
 
-    // InvalidInputLength
+    // WrongInputLength
     {
         let err = decode::<5>(b"A===", Config::B64.end_padding(true)).unwrap_err();
         assert!(
-            matches!(&err, DecodeError::InvalidInputLength(x) if x.length() == 1),
+            matches!(&err, DecodeError::WrongInputLength(x) if x.length() == 1),
             "{:?}",
             err
         );
@@ -330,7 +405,7 @@ fn test_decode_base64_errors() {
     {
         let err = decode::<5>(b"A", Config::B64).unwrap_err();
         assert!(
-            matches!(err, DecodeError::InvalidInputLength { .. }),
+            matches!(err, DecodeError::WrongInputLength { .. }),
             "{:?}",
             err
         );
@@ -338,7 +413,7 @@ fn test_decode_base64_errors() {
     {
         let err = decode::<5>(b"AAAAA", Config::B64).unwrap_err();
         assert!(
-            matches!(err, DecodeError::InvalidInputLength { .. }),
+            matches!(err, DecodeError::WrongInputLength { .. }),
             "{:?}",
             err
         );

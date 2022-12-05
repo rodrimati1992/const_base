@@ -1,5 +1,7 @@
 //! Miscelaneous utility functions.
 
+use const_panic::PanicVal;
+
 /// Constructs an array by repeating `repeated`. Most useful when `LENGTH` can be inferred.
 ///
 /// # Example
@@ -14,4 +16,15 @@
 #[inline(always)]
 pub const fn repeated<const LENGTH: usize>(repeated: u8) -> [u8; LENGTH] {
     [repeated; LENGTH]
+}
+
+#[cold]
+#[track_caller]
+#[inline(never)]
+pub(crate) const fn cpanic(pvs: &[PanicVal<'_>]) -> ! {
+    const_panic::concat_panic(&[
+        &[PanicVal::write_str("\n\n")],
+        pvs,
+        &[PanicVal::write_str("\n\n")],
+    ])
 }

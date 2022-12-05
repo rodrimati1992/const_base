@@ -1,4 +1,4 @@
-use crate::{encoding::INVALID_ENC, Config, DecodeError, HexCharSet, MismatchedOutputLength};
+use crate::{encoding::INVALID_ENC, ArrayStr, Config, DecodeError, HexCharSet, WrongOutputLength};
 
 const UPPER_A_SUB_10: u8 = b'A' - 10;
 const LOWER_A_SUB_10: u8 = b'a' - 10;
@@ -21,11 +21,11 @@ pub(crate) const fn encode<const OUT: usize>(
     mut input: &[u8],
     config: Config,
     char_set: HexCharSet,
-) -> Result<[u8; OUT], MismatchedOutputLength> {
+) -> Result<ArrayStr<OUT>, WrongOutputLength> {
     let output_len = encoded_len(input.len(), config);
 
     if OUT != output_len {
-        return Err(crate::MismatchedOutputLength {
+        return Err(crate::WrongOutputLength {
             expected: OUT,
             found: output_len,
         });
@@ -46,7 +46,10 @@ pub(crate) const fn encode<const OUT: usize>(
         input = rem;
     }
 
-    Ok(out)
+    unsafe {
+        // SAFETY: out is only written bytes from `digit_to_hex`, which are all ascii.
+        Ok(ArrayStr::from_utf8_unchecked(out))
+    }
 }
 
 pub(crate) const fn decoded_len(input: &[u8], _config: Config) -> usize {
@@ -60,16 +63,15 @@ pub(crate) const fn decode<const OUT: usize>(
     let output_len = decoded_len(input, config);
 
     if input.len() % 2 == 1 {
-        return Err(DecodeError::InvalidInputLength(crate::InvalidInputLength {
+        return Err(DecodeError::WrongInputLength(crate::WrongInputLength {
             length: input.len(),
+            enc: config.encoding,
         }));
     } else if output_len != OUT {
-        return Err(DecodeError::MismatchedOutputLength(
-            MismatchedOutputLength {
-                expected: OUT,
-                found: output_len,
-            },
-        ));
+        return Err(DecodeError::WrongOutputLength(WrongOutputLength {
+            expected: output_len,
+            found: OUT,
+        }));
     }
 
     let mut out = [0u8; OUT];
@@ -98,6 +100,10 @@ pub(crate) const fn decode<const OUT: usize>(
 
         input = rem;
         in_i += 2;
+    }
+
+    if input.len() == 1 {
+        panic!("BUG: `input` can't be length 1 here")
     }
 
     Ok(out)
