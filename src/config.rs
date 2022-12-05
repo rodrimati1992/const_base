@@ -70,7 +70,7 @@ impl Config {
     pub const fn encode<const OUT: usize>(
         self,
         input: &[u8],
-    ) -> Result<crate::ArrayStr<OUT>, crate::WrongLength> {
+    ) -> Result<crate::ArrayStr<OUT>, crate::WrongOutputLength> {
         crate::encode(input, self)
     }
 

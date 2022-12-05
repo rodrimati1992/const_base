@@ -1,4 +1,4 @@
-use crate::{encoding::INVALID_ENC, ArrayStr, Config, DecodeError, HexCharSet, WrongLength};
+use crate::{encoding::INVALID_ENC, ArrayStr, Config, DecodeError, HexCharSet, WrongOutputLength};
 
 const UPPER_A_SUB_10: u8 = b'A' - 10;
 const LOWER_A_SUB_10: u8 = b'a' - 10;
@@ -21,11 +21,11 @@ pub(crate) const fn encode<const OUT: usize>(
     mut input: &[u8],
     config: Config,
     char_set: HexCharSet,
-) -> Result<ArrayStr<OUT>, WrongLength> {
+) -> Result<ArrayStr<OUT>, WrongOutputLength> {
     let output_len = encoded_len(input.len(), config);
 
     if OUT != output_len {
-        return Err(crate::WrongLength {
+        return Err(crate::WrongOutputLength {
             expected: OUT,
             found: output_len,
         });
@@ -63,14 +63,14 @@ pub(crate) const fn decode<const OUT: usize>(
     let output_len = decoded_len(input, config);
 
     if input.len() % 2 == 1 {
-        return Err(DecodeError::InvalidInputLength(crate::InvalidInputLength {
+        return Err(DecodeError::WrongInputLength(crate::WrongInputLength {
             length: input.len(),
             enc: config.encoding,
         }));
     } else if output_len != OUT {
-        return Err(DecodeError::WrongLength(WrongLength {
-            expected: OUT,
-            found: output_len,
+        return Err(DecodeError::WrongOutputLength(WrongOutputLength {
+            expected: output_len,
+            found: OUT,
         }));
     }
 

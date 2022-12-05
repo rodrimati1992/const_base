@@ -97,7 +97,7 @@ pub use crate::{
     config::Config,
     encode_decode_shared::*,
     encoding::{B32CharSet, B64CharSet, Encoding, HexCharSet},
-    errors::{DecodeError, InvalidByte, InvalidInputLength, WrongLength},
+    errors::{DecodeError, ExcessBits, InvalidByte, WrongInputLength, WrongOutputLength},
 };
 
 #[cfg(test)]

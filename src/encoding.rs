@@ -1,3 +1,5 @@
+use crate::DecodeError;
+
 /// Determines which encoding is used.
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -168,5 +170,31 @@ impl<const N: usize> CharSetLookup<N> {
         }
 
         Self { from_enc, into_enc }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Helper struct for checking that the last byte in base64/32
+// doesn't contain set bits in the `excess_bits` lower bits.
+pub(crate) struct CheckExcessBits {
+    pub(crate) last_byte: u8,
+    pub(crate) decoded_byte: u8,
+    pub(crate) excess_bits: u8,
+}
+
+impl CheckExcessBits {
+    pub(crate) const fn call(self) -> Result<(), DecodeError> {
+        let Self {
+            last_byte,
+            decoded_byte,
+            excess_bits,
+        } = self;
+
+        if ((decoded_byte >> excess_bits) << excess_bits) == decoded_byte {
+            Ok(())
+        } else {
+            Err(DecodeError::ExcessBits(crate::ExcessBits { last_byte }))
+        }
     }
 }

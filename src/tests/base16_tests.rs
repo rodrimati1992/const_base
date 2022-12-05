@@ -93,14 +93,14 @@ fn test_decode_hex_errors() {
         }
     }
 
-    // WrongLength
+    // WrongOutputLength
     {
         let err = Config::HEX.decode::<3>(b"00000000").unwrap_err();
         assert!(
             matches!(
                 &err,
-                DecodeError::WrongLength(x)
-                if x.expected() == 3 && x.found() == 4
+                DecodeError::WrongOutputLength(x)
+                if x.found() == 3 && x.expected() == 4
             ),
             "{:?}",
             err
@@ -114,15 +114,15 @@ fn test_decode_hex_errors() {
         assert!(
             matches!(
                 &err,
-                DecodeError::WrongLength(x)
-                if x.expected() == 5 && x.found() == 4
+                DecodeError::WrongOutputLength(x)
+                if x.found() == 5 && x.expected() == 4
             ),
             "{:?}",
             err
         );
     }
 
-    // InvalidInputLength
+    // WrongInputLength
     for invalid_len in [1, 3, 5, 7, 9].iter().copied() {
         let mut array = [0u8; 16];
 
@@ -132,7 +132,7 @@ fn test_decode_hex_errors() {
 
         let err = Config::HEX.decode::<100>(slice).unwrap_err();
         assert!(
-            matches!(&err, DecodeError::InvalidInputLength(x) if x.length() == invalid_len),
+            matches!(&err, DecodeError::WrongInputLength(x) if x.length() == invalid_len),
             "{:?}",
             err
         );
@@ -145,6 +145,10 @@ fn test_decode_hex_errors() {
         let slice = &array[..invalid_len];
 
         let err = Config::HEX.decode::<100>(slice).unwrap_err();
-        assert!(matches!(&err, DecodeError::WrongLength { .. }), "{:?}", err);
+        assert!(
+            matches!(&err, DecodeError::WrongOutputLength { .. }),
+            "{:?}",
+            err
+        );
     }
 }

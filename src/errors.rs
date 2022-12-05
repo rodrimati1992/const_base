@@ -6,20 +6,26 @@ use crate::Encoding;
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum DecodeError {
-    /// When one of the bytes isn't in the char set for that encoding.
+    /// When one of the bytes in the slice passed to [`decode`]
+    /// isn't in the char set of the passed encoding.
     ///
     /// Eg: a `!` in an otherwise base 64 encoded string.
-    InvalidByte(InvalidByte),
-
-    /// When the array returned by [`decode`] isn't the same length as what the arguments
-    /// passed to [`decode`] would produce.
     ///
     /// [`decode`]: crate::decode()
-    WrongLength(WrongLength),
+    InvalidByte(InvalidByte),
+
+    /// When the array returned by [`decode`]
+    /// isn't the length that the arguments would produce.
+    ///
+    /// [`decode`]: crate::decode()
+    WrongOutputLength(WrongOutputLength),
     /// When the slice passed to [`decode`] is not a valid length for that encoding.
     ///
     /// For base 64 that is when `input.len() % 4` equals `1`.
-    InvalidInputLength(InvalidInputLength),
+    WrongInputLength(WrongInputLength),
+    /// When the last byte in the slice passed to [`decode`]
+    /// has excess set bits that aren't copied to the return value.
+    ExcessBits(ExcessBits),
 }
 
 macro_rules! define_unwrap_self {
@@ -37,19 +43,24 @@ macro_rules! define_unwrap_self {
 impl DecodeError {
     define_unwrap_self! {}
 
+    /// Panics with this error as the message.
     #[track_caller]
     pub const fn panic(&self) -> ! {
         match self {
             DecodeError::InvalidByte(x) => x.panic(),
-            DecodeError::WrongLength(x) => x.panic(),
-            DecodeError::InvalidInputLength(x) => x.panic(),
+            DecodeError::WrongOutputLength(x) => x.panic(),
+            DecodeError::WrongInputLength(x) => x.panic(),
+            DecodeError::ExcessBits(x) => x.panic(),
         }
     }
 }
 
-/// When one of the bytes isn't in the char set for that encoding.
+/// When one of the bytes in the slice passed to [`decode`]
+/// isn't in the char set of the passed encoding.
 ///
 /// Eg: a `!` in an otherwise base 64 encoded string.
+///
+/// [`decode`]: crate::decode()
 ///
 /// # Example
 ///
@@ -87,6 +98,7 @@ impl InvalidByte {
 
     define_unwrap_self! {}
 
+    /// Panics with this error as the message.
     #[track_caller]
     pub const fn panic(&self) -> ! {
         use const_panic::{FmtArg, PanicVal};
@@ -104,33 +116,39 @@ impl InvalidByte {
     }
 }
 
-/// When the array returned by [`decode`] isn't the same length as what the arguments
-/// passed to [`decode`] would produce.
+/// When the array returned by [`decode`] or encode isn't the
+/// same length as what the arguments would produce.
 ///
+/// [`decode`]: crate::decode()
+/// [`encode`]: crate::encode()
 ///
 /// # Example
 ///
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{Config, DecodeError, WrongLength, decode};
+/// use const_base::{Config, DecodeError, WrongOutputLength, decode};
 ///
 /// const DECODED: Result<[u8; 8], DecodeError> = decode(b"AAAAAA", Config::B64);
-/// assert!(matches!(
-///     DECODED,
-///     Err(DecodeError::WrongLength(WrongLength{..}))
-/// ));
+///
+/// match DECODED {
+///     Err(DecodeError::WrongOutputLength(err)) => {
+///         assert_eq!(err.expected(), 4);
+///         assert_eq!(err.found(), 8);
+///     }
+///     _ => unreachable!()
+/// }
 ///
 /// ```
 ///
 /// [`decode`]: crate::decode()
 #[derive(Debug, PartialEq)]
-pub struct WrongLength {
+pub struct WrongOutputLength {
     pub(crate) expected: usize,
     pub(crate) found: usize,
 }
 
-impl WrongLength {
+impl WrongOutputLength {
     pub const fn expected(&self) -> usize {
         self.expected
     }
@@ -140,6 +158,7 @@ impl WrongLength {
 
     define_unwrap_self! {}
 
+    /// Panics with this error as the message.
     #[track_caller]
     pub const fn panic(&self) -> ! {
         use const_panic::{FmtArg, PanicVal};
@@ -153,39 +172,52 @@ impl WrongLength {
     }
 }
 
-/// When the slice passed to [`decode`] is not a valid length for that encoding.
+/// When the slice passed to [`decode`] is not a valid length for the passed encoding.
 ///
 /// For base 64 that is when `input.len() % 4` equals `1`.
+///
+/// [`decode`]: crate::decode()
 ///
 /// # Example
 ///
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{Config, DecodeError, InvalidInputLength, decode};
+/// use const_base::{Config, DecodeError, Encoding, WrongInputLength, decode};
 ///
 /// const DECODED: Result<[u8; 8], DecodeError> = decode(b"AAAAA", Config::B64);
-/// assert!(matches!(
-///     DECODED,
-///     Err(DecodeError::InvalidInputLength(InvalidInputLength{..}))
-/// ));
+///
+/// match DECODED {
+///     Err(DecodeError::WrongInputLength(err)) => {
+///         assert_eq!(err.length(), 5);
+///         assert!(matches!(err.encoding(), Encoding::Base64{..}));
+///     }
+///     _ => unreachable!()
+/// }
 ///
 /// ```
 ///
 /// [`decode`]: crate::decode()
 #[derive(Debug, PartialEq)]
-pub struct InvalidInputLength {
+pub struct WrongInputLength {
     pub(crate) length: usize,
     pub(crate) enc: Encoding,
 }
 
-impl InvalidInputLength {
+impl WrongInputLength {
+    /// The length of the slice argument
     pub const fn length(&self) -> usize {
         self.length
     }
 
+    /// The encoding that was attempted to decode from.
+    pub const fn encoding(&self) -> Encoding {
+        self.enc
+    }
+
     define_unwrap_self! {}
 
+    /// Panics with this error as the message.
     #[track_caller]
     pub const fn panic(&self) -> ! {
         use const_panic::{FmtArg, PanicVal};
@@ -199,10 +231,54 @@ impl InvalidInputLength {
     }
 }
 
+/// When the last byte in the slice passed to [`decode`]
+/// has excess set bits that aren't copied to the return value.
+///
+/// # Example
+///
+/// ```rust
+/// use const_base::{Config, DecodeError, decode};
+///
+/// assert_eq!(decode::<2>(b"ABA", Config::B64).unwrap(), [0u8, 16]);
+///
+/// // base 64 inputs of length 3 are 18 bits, which is 2 bytes and 2 excess bits.
+/// // `ABC` in base64 is `000000_000001_000010`.
+/// // Because the trailing `10` contains an excess set bit, it causes this error.
+/// match decode::<2>(b"ABC", Config::B64) {
+///     Err(DecodeError::ExcessBits(err)) => {
+///         assert_eq!(err.last_byte(), b'C');
+///     }
+///     _ => unreachable!()
+/// }
+/// ```
+#[derive(Debug, PartialEq)]
+pub struct ExcessBits {
+    pub(crate) last_byte: u8,
+}
+
+impl ExcessBits {
+    pub const fn last_byte(&self) -> u8 {
+        self.last_byte
+    }
+
+    define_unwrap_self! {}
+
+    /// Panics with this error as the message.
+    #[track_caller]
+    pub const fn panic(&self) -> ! {
+        use const_panic::{FmtArg, PanicVal};
+
+        crate::utils::cpanic(&[
+            PanicVal::write_str("excess bits in last byte: "),
+            PanicVal::from_u8(self.last_byte, FmtArg::DEBUG),
+        ])
+    }
+}
+
 #[doc(hidden)]
 #[track_caller]
 pub const fn __unwrap_encode<const N: usize>(
-    res: Result<crate::ArrayStr<N>, WrongLength>,
+    res: Result<crate::ArrayStr<N>, WrongOutputLength>,
 ) -> crate::ArrayStr<N> {
     match res {
         Ok(x) => x,

@@ -60,7 +60,7 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 ///
 /// # Errors
 ///
-/// This function returns a `WrongLength` error when
+/// This function returns a `WrongOutputLength` error when
 /// `OUT` doesn't equal `encoded_len(input.len(), config)`.
 ///
 /// # Example
@@ -68,16 +68,17 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 /// ### Base 64
 ///
 /// ```rust
-/// use const_base::{ArrayStr, Config, WrongLength, encode};
+/// use const_base::{ArrayStr, Config, WrongOutputLength, encode};
 ///
 /// {
-///     const ENCODED: &ArrayStr<16> = &WrongLength::unwrap(encode(b"hello worl", Config::B64));
+///     const ENCODED: &ArrayStr<16> =
+///         &WrongOutputLength::unwrap(encode(b"hello worl", Config::B64));
 ///
 ///     assert_eq!(ENCODED, "aGVsbG8gd29ybA==");
 /// }
 /// {
 ///     const CFG: Config = Config::B64.end_padding(false);
-///     const ENCODED: &ArrayStr<4> = &WrongLength::unwrap(encode(b"BYE", CFG));
+///     const ENCODED: &ArrayStr<4> = &WrongOutputLength::unwrap(encode(b"BYE", CFG));
 ///
 ///     assert_eq!(ENCODED, "QllF");
 /// }
@@ -86,16 +87,16 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 /// ### Base 32
 ///
 /// ```rust
-/// use const_base::{ArrayStr, Config, WrongLength, encode};
+/// use const_base::{ArrayStr, Config, WrongOutputLength, encode};
 ///
 /// {
-///     const ENCODED: &ArrayStr<8> = &WrongLength::unwrap(encode(b"fox", Config::B32));
+///     const ENCODED: &ArrayStr<8> = &WrongOutputLength::unwrap(encode(b"fox", Config::B32));
 ///
 ///     assert_eq!(ENCODED, "MZXXQ===");
 /// }
 /// {
 ///     const CFG: Config = Config::B32.end_padding(false);
-///     const ENCODED: &ArrayStr<5> = &WrongLength::unwrap(encode(b"dog", CFG));
+///     const ENCODED: &ArrayStr<5> = &WrongOutputLength::unwrap(encode(b"dog", CFG));
 ///
 ///     assert_eq!(ENCODED, "MRXWO");
 /// }
@@ -104,12 +105,12 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 /// ### Hexadecimal
 ///
 /// ```rust
-/// use const_base::{ArrayStr, Config, WrongLength, encode};
+/// use const_base::{ArrayStr, Config, WrongOutputLength, encode};
 ///
 /// {
-///     const LOWER: &ArrayStr<8> = &WrongLength::unwrap(encode(b"bluh", Config::HEX_LOWER));
+///     const LOWER: &ArrayStr<8> = &WrongOutputLength::unwrap(encode(b"bluh", Config::HEX_LOWER));
 ///
-///     const UPPER: &ArrayStr<8> = &WrongLength::unwrap(encode(b"bluh", Config::HEX));
+///     const UPPER: &ArrayStr<8> = &WrongOutputLength::unwrap(encode(b"bluh", Config::HEX));
 ///
 ///     assert_eq!(LOWER, "626c7568");
 ///     assert_eq!(UPPER, "626C7568");
@@ -119,7 +120,7 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
 pub const fn encode<const OUT: usize>(
     input: &[u8],
     config: Config,
-) -> Result<crate::ArrayStr<OUT>, crate::WrongLength> {
+) -> Result<crate::ArrayStr<OUT>, crate::WrongOutputLength> {
     match config.encoding {
         Encoding::Base64(cset) => crate::base_64::encode(input, config, cset),
         Encoding::Base32(cset) => crate::base_32::encode(input, config, cset),
@@ -200,10 +201,10 @@ pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
 /// When one of the bytes isn't in the char set for that encoding.
 /// Eg: a `!` in an otherwise base 64 encoded string.
 ///
-/// - [`DecodeError::WrongLength`]:
+/// - [`DecodeError::WrongOutputLength`]:
 /// When `OUT` doesn't equal `decoded_len(input, config)`.
 ///
-/// - [`DecodeError::InvalidInputLength`]:
+/// - [`DecodeError::WrongInputLength`]:
 /// When `input.len()` is not a valid length for that encoding.
 /// For base 64 that is when `input.len() % 4` equals `1`.
 ///
@@ -231,8 +232,8 @@ pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
 ///     const DECODED_C: Result<[u8; 6], DecodeError> = decode(b"AAAAA", Config::B64);
 ///     
 ///     assert!(matches!(DECODED_A, Err(DecodeError::InvalidByte(_))));
-///     assert!(matches!(DECODED_B, Err(DecodeError::WrongLength(_))));
-///     assert!(matches!(DECODED_C, Err(DecodeError::InvalidInputLength(_))));
+///     assert!(matches!(DECODED_B, Err(DecodeError::WrongOutputLength(_))));
+///     assert!(matches!(DECODED_C, Err(DecodeError::WrongInputLength(_))));
 /// }
 ///
 /// ```
@@ -353,7 +354,7 @@ macro_rules! encode_bases {
         let output_len = encoded_len($input.len(), $config);
 
         if output_len != OUT {
-            return Err(crate::WrongLength {
+            return Err(crate::WrongOutputLength {
                 expected: OUT,
                 found: output_len,
             });
@@ -393,7 +394,7 @@ macro_rules! decode_bases {
         |$in_i:ident| $decode_non_empty:expr
     ) => {
         use crate::encode_decode_shared::make_invalid_byte_err;
-        use crate::{DecodeError, InvalidInputLength, WrongLength};
+        use crate::{DecodeError, WrongInputLength, WrongOutputLength};
 
         let mut out = [0u8; OUT];
         let mut out_i = 0usize;
@@ -410,14 +411,14 @@ macro_rules! decode_bases {
         }
 
         if $is_invalid_length {
-            return Err(DecodeError::InvalidInputLength(InvalidInputLength {
+            return Err(DecodeError::WrongInputLength(WrongInputLength {
                 length: $input.len(),
                 enc: $config.encoding,
             }));
         } else if output_len != OUT {
-            return Err(DecodeError::WrongLength(WrongLength {
-                expected: OUT,
-                found: output_len,
+            return Err(DecodeError::WrongOutputLength(WrongOutputLength {
+                expected: output_len,
+                found: OUT,
             }));
         }
 

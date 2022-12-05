@@ -228,33 +228,45 @@ fn test_decode_base32_errors() {
         assert!(matches!(err, DecodeError::InvalidByte { .. }), "{:?}", err);
     }
 
-    // WrongLength
+    // WrongOutputLength
     {
         let err = decode::<4>(b"AA\x00A", Config::B32).unwrap_err();
-        assert!(matches!(err, DecodeError::WrongLength { .. }), "{:?}", err);
+        assert!(
+            matches!(err, DecodeError::WrongOutputLength { .. }),
+            "{:?}",
+            err
+        );
     }
     {
         let err = decode::<3>(b"AAA\x00AAA", Config::B32).unwrap_err();
-        assert!(matches!(err, DecodeError::WrongLength { .. }), "{:?}", err);
+        assert!(
+            matches!(err, DecodeError::WrongOutputLength { .. }),
+            "{:?}",
+            err
+        );
     }
     {
         let err = decode::<6>(b"AAAAA\x00A", Config::B32).unwrap_err();
-        assert!(matches!(err, DecodeError::WrongLength { .. }), "{:?}", err);
+        assert!(
+            matches!(err, DecodeError::WrongOutputLength { .. }),
+            "{:?}",
+            err
+        );
     }
     {
         let err = decode::<5>(b"AAAAAAA\x00BB", Config::B32).unwrap_err();
         assert!(
             matches!(
                 &err,
-                DecodeError::WrongLength(x)
-                if x.expected() == 5 && x.found() == 6
+                DecodeError::WrongOutputLength(x)
+                if x.expected() == 6 && x.found() == 5
             ),
             "{:?}",
             err
         );
     }
 
-    // InvalidInputLength
+    // WrongInputLength
     for invalid_len in [1, 3, 6, 9, 11].iter().copied() {
         let mut array = [0u8; 16];
 
@@ -265,7 +277,7 @@ fn test_decode_base32_errors() {
 
         let err = decode::<100>(slice, Config::B32.end_padding(true)).unwrap_err();
         assert!(
-            matches!(&err, DecodeError::InvalidInputLength(x) if x.length() == invalid_len),
+            matches!(&err, DecodeError::WrongInputLength(x) if x.length() == invalid_len),
             "{:?}",
             err
         );
