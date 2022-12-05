@@ -4,7 +4,7 @@ use crate::{B32CharSet, B64CharSet, Encoding, HexCharSet};
 ///
 /// `Config` has these values by default:
 ///
-/// - `end_padding = false`
+/// - `end_padding = true`
 ///
 #[derive(Debug, Copy, Clone)]
 pub struct Config {
@@ -25,6 +25,7 @@ impl Config {
     ///
     /// // The same as `Config::B64`
     /// const CFG: Config = Config::new(Encoding::Base64(B64CharSet::Standard));
+    ///
     /// assert_eq!(encode!("Rust", CFG), "UnVzdA==")
     ///
     /// ```
@@ -38,18 +39,37 @@ impl Config {
     /// Determines whether the string has padding at the end.
     /// This is `true` by default.
     ///
-    /// For base64 strings, the string is padded to be a multiple of 4 long, with `=`.
+    /// For each encoding, the strings are padded to a multiple:
     ///
-    /// # Example
+    /// - Base64: pads to be a multiple of 4 long, with `=`.
+    /// - Base32: pads to be a multiple of 8 long, with `=`.
+    /// - Hexadecimal: requires no padding
+    ///
+    /// # Examples
+    ///
+    /// ### Base 64
     ///
     /// ```rust
-    /// use const_base::{B64CharSet, Config, Encoding, encode};
+    /// use const_base::{Config, encode};
     ///
     /// assert_eq!(encode!("Rust", Config::B64), "UnVzdA==");
     ///
     /// assert_eq!(encode!("Rust", Config::B64.end_padding(true)), "UnVzdA==");
     ///
     /// assert_eq!(encode!("Rust", Config::B64.end_padding(false)), "UnVzdA");
+    ///
+    /// ```
+    ///
+    /// ### Base 32
+    ///
+    /// ```rust
+    /// use const_base::{Config, encode};
+    ///
+    /// assert_eq!(encode!("Rustic", Config::B32), "KJ2XG5DJMM======");
+    ///
+    /// assert_eq!(encode!("Rustic", Config::B32.end_padding(true)), "KJ2XG5DJMM======");
+    ///
+    /// assert_eq!(encode!("Rustic", Config::B32.end_padding(false)), "KJ2XG5DJMM");
     ///
     /// ```
     pub const fn end_padding(mut self, have: bool) -> Self {

@@ -79,9 +79,8 @@
 /// ', src/codec_macros.rs:5:1
 ///
 /// ```
-/// This macro emulates panics using type errors like those.
 ///
-/// In this case, the error is `WrongInputLength`,
+/// In this case, the error is [`WrongInputLength`](crate::DecodeError::WrongInputLength),
 /// because the input string can't be `4 * n + 1` bytes long (`n` can be any positive integer).
 ///
 ///

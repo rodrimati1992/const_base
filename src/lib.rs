@@ -5,7 +5,7 @@
 //! ### Encoding
 //!
 //! ```rust
-//! use const_base::{encode_as_str, ArrayStr, Config};
+//! use const_base::{encode_as_str, Config};
 //!
 //! {
 //!     // the encoding macros can take both `&str` and `&[u8]` constants.

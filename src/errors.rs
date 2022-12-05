@@ -21,7 +21,7 @@ pub enum DecodeError {
     WrongOutputLength(WrongOutputLength),
     /// When the slice passed to [`decode`] is not a valid length for that encoding.
     ///
-    /// For base 64 that is when `input.len() % 4` equals `1`.
+    #[doc = wrong_lengths_doc!()]
     WrongInputLength(WrongInputLength),
     /// When the last byte in the slice passed to [`decode`]
     /// has excess set bits that aren't copied to the return value.
@@ -116,8 +116,8 @@ impl InvalidByte {
     }
 }
 
-/// When the array returned by [`decode`] or encode isn't the
-/// same length as what the arguments would produce.
+/// When the array returned by [`decode`] or [`encode`] isn't the
+/// length that the arguments would produce.
 ///
 /// [`decode`]: crate::decode()
 /// [`encode`]: crate::encode()
@@ -172,9 +172,20 @@ impl WrongOutputLength {
     }
 }
 
+macro_rules! wrong_lengths_doc {
+    () => {
+        "The input lengths that are wrong for each encoding:\n\
+        - Base 64: when `input.len() % 4` equals `1`.\n\
+        - Base 32: when `input.len() % 8` equals `1`, `3` , or `6`.\n\
+        - Base 16: when `input.len() % 2` equals `1`.\n\
+        "
+    };
+}
+use wrong_lengths_doc;
+
 /// When the slice passed to [`decode`] is not a valid length for the passed encoding.
 ///
-/// For base 64 that is when `input.len() % 4` equals `1`.
+#[doc = wrong_lengths_doc!()]
 ///
 /// [`decode`]: crate::decode()
 ///
@@ -242,8 +253,10 @@ impl WrongInputLength {
 /// assert_eq!(decode::<2>(b"ABA", Config::B64).unwrap(), [0u8, 16]);
 ///
 /// // base 64 inputs of length 3 are 18 bits, which is 2 bytes and 2 excess bits.
-/// // `ABC` in base64 is `000000_000001_000010`.
-/// // Because the trailing `10` contains an excess set bit, it causes this error.
+/// // `ABC` is base64 for `[0b00000000, 0b00010000]` with excess `0b10` bits.
+/// //
+/// // Because the two unused bits at the end (which are `10`) include a set bit,
+/// // it causes the `ExcessBits` error.
 /// match decode::<2>(b"ABC", Config::B64) {
 ///     Err(DecodeError::ExcessBits(err)) => {
 ///         assert_eq!(err.last_byte(), b'C');

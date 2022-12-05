@@ -56,7 +56,8 @@ pub const fn encoded_len(unencoded_length: usize, config: Config) -> usize {
     }
 }
 
-/// Encodes `input` into a `[u8; OUT]` with the encoding determined by `config`.
+/// Encodes `input` into an [`ArrayStr<OUT>`](crate::ArrayStr)
+/// with the encoding determined by `config`.
 ///
 /// # Errors
 ///
@@ -199,14 +200,12 @@ pub const fn decoded_len(encoded: &[u8], config: Config) -> usize {
 ///
 /// - [`DecodeError::InvalidByte`]:
 /// When one of the bytes isn't in the char set for that encoding.
-/// Eg: a `!` in an otherwise base 64 encoded string.
 ///
 /// - [`DecodeError::WrongOutputLength`]:
 /// When `OUT` doesn't equal `decoded_len(input, config)`.
 ///
 /// - [`DecodeError::WrongInputLength`]:
 /// When `input.len()` is not a valid length for that encoding.
-/// For base 64 that is when `input.len() % 4` equals `1`.
 ///
 /// # Example
 ///
