@@ -28,7 +28,12 @@ jobs:
     - name: ci-nighly
       if: ${{ matrix.rust == 'nightly' && runner.os == 'Linux' }}
       run: |
-        rustup override set ${{ matrix.rust }}
+        rustup override set nightly
+        
+        rustup toolchain install nightly --component miri
+        rustup override set nightly
+        cargo miri setup
+
         cargo update
 
         cd "${{github.workspace}}/"
