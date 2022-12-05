@@ -168,6 +168,96 @@ fn test_decode_base32() {
 }
 
 #[test]
+fn test_decode_base32_trailing_bits_err() {
+    {
+        for (input, output) in [
+            (b"7A", [248u8]),
+            (b"7E", [249u8]),
+            (b"7I", [250u8]),
+            (b"7M", [251u8]),
+            (b"7Q", [252u8]),
+            (b"7U", [253u8]),
+            (b"7Y", [254u8]),
+            (b"74", [255u8]),
+        ] {
+            assert_eq!(decode::<1>(input, Config::B32).unwrap(), output);
+        }
+
+        match decode::<1>(b"67", Config::B32) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'7');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+    {
+        assert_eq!(decode::<2>(b"777A", Config::B32).unwrap(), [255u8, 254]);
+        assert_eq!(decode::<2>(b"777Q", Config::B32).unwrap(), [255u8, 255]);
+
+        match decode::<2>(b"6667", Config::B32) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'7');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+    {
+        for (input, output) in [
+            (b"7777A", [255u8, 255, 240]),
+            (b"7777C", [255u8, 255, 241]),
+            (b"7777E", [255u8, 255, 242]),
+            (b"7777G", [255u8, 255, 243]),
+            (b"7777I", [255u8, 255, 244]),
+            (b"7777K", [255u8, 255, 245]),
+            (b"7777M", [255u8, 255, 246]),
+            (b"7777O", [255u8, 255, 247]),
+            (b"7777Q", [255u8, 255, 248]),
+            (b"7777S", [255u8, 255, 249]),
+            (b"7777U", [255u8, 255, 250]),
+            (b"7777W", [255u8, 255, 251]),
+            (b"7777Y", [255u8, 255, 252]),
+            (b"77772", [255u8, 255, 253]),
+            (b"77774", [255u8, 255, 254]),
+            (b"77776", [255u8, 255, 255]),
+        ] {
+            assert_eq!(decode::<3>(input, Config::B32).unwrap(), output);
+        }
+
+        match decode::<3>(b"66667", Config::B32) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'7');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+    {
+        assert_eq!(
+            decode::<4>(b"777777A", Config::B32).unwrap(),
+            [255u8, 255, 255, 252]
+        );
+        assert_eq!(
+            decode::<4>(b"777777I", Config::B32).unwrap(),
+            [255u8, 255, 255, 253]
+        );
+        assert_eq!(
+            decode::<4>(b"777777Q", Config::B32).unwrap(),
+            [255u8, 255, 255, 254]
+        );
+        assert_eq!(
+            decode::<4>(b"777777Y", Config::B32).unwrap(),
+            [255u8, 255, 255, 255]
+        );
+
+        match decode::<4>(b"6666667", Config::B32) {
+            Err(DecodeError::ExcessBits(err)) => {
+                assert_eq!(err.last_byte(), b'7');
+            }
+            x => panic!("{x:?}"),
+        }
+    }
+}
+
+#[test]
 fn test_decode_base32_errors() {
     {
         // intentionally padded to this length
